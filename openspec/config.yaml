@@ -1,0 +1,73 @@
+schema: spec-driven
+
+context: |
+  # Whisper App
+
+  Grabadora minimalista de voz a texto, 100% offline, sobre whisper.cpp.
+
+  ## Producto
+  Una sola ventana pequeña (no pantalla completa). Ciclo único:
+  grabar → pausar/reanudar → detener → esperar transcripción → texto a la vista
+  → limpiar o reprocesar → volver a grabar.
+  Pensada para audios cortos. Sin cuentas, sin nube, sin telemetría.
+
+  Fuera de alcance por ahora: hotkeys globales, inyección de texto en otras apps,
+  historial de notas, importar archivos de audio, grabación de audio del sistema,
+  resúmenes con LLM, traducción. Si algo de eso se propone, debe justificarse
+  contra "súper pequeña, súper minimalista".
+
+  ## Por qué compilamos desde fuente
+  Los releases de whisper.cpp y de apps Electron similares (p. ej. WhisperPress)
+  vienen sin firmar y SmartScreen/antivirus los marcan como amenaza — falso
+  positivo, pero bloquea el uso. Aquí el engine se compila localmente con
+  `npm run setup` y nunca se versiona un binario de terceros.
+
+  ## Stack
+  - Electron (main / preload / renderer), HTML + CSS + JS plano. Sin frameworks
+    de UI, sin bundler, sin TypeScript.
+  - `contextIsolation: true`, `nodeIntegration: false`. El renderer sólo ve la
+    superficie que `src/preload/preload.js` expone en `window.api`.
+  - whisper.cpp compilado desde fuente vía CMake. Modelo por defecto: **small**
+    (`ggml-small.bin`). CUDA opcional (`npm run setup:cuda`).
+  - Captura de audio con WebAudio en el renderer a **16 kHz mono**, codificado a
+    WAV PCM 16-bit — el formato que whisper.cpp espera sin conversión previa.
+  - Cross-platform Linux + Windows. Se desarrolla y prueba en Linux/WSL2 (WSLg,
+    micrófono vía PulseAudio); Windows no se puede probar desde el entorno de
+    desarrollo, así que el código no asume APIs de una sola plataforma.
+
+  ## Layout
+    src/main/       proceso principal: ventana, IPC, engine, rutas
+    src/preload/    puente contextBridge, única superficie del renderer
+    src/renderer/   UI: index.html, app.css, app.js
+    scripts/        setup-whisper.js — compila engine + descarga modelo
+    vendor/         engine y modelos locales (git-ignored, nunca versionar)
+
+  ## Convenciones
+  - Commits convencionales (`feat:`, `fix:`, `docs:`, `chore:`).
+  - CommonJS (`require`) en main/preload; `'use strict'` al tope de cada archivo.
+  - Indentación de 2 espacios, comillas simples, punto y coma.
+  - Comentarios en español y sólo donde expliquen un *porqué*, no un *qué*.
+  - Nada de dependencias en runtime salvo que haya una razón fuerte; hoy el
+    árbol de producción es cero-dependencias.
+  - Ninguna llamada de red en runtime. La red sólo se toca en `npm run setup`.
+
+rules:
+  proposal:
+    - Cada propuesta debe justificarse contra el alcance minimalista; si añade
+      superficie de UI, decir explícitamente qué se saca o por qué cabe.
+    - Incluir siempre una sección "Fuera de alcance".
+  design:
+    - Indicar qué corre en main y qué en renderer, y qué canal IPC los une.
+  tasks:
+    - Trocear en tareas de máximo 2 horas.
+    - La última tarea de cada cambio es verificarlo con la app corriendo
+      (`npm start`), no sólo con pruebas.
+
+operations:
+  apply:
+    guidance:
+      - Verificar sintaxis con `node --check` en los archivos JS tocados.
+      - No versionar nada bajo `vendor/`.
+  archive:
+    guidance:
+      - Resumir en una línea qué quedó fuera de alcance y por qué.
