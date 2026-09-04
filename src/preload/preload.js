@@ -16,6 +16,8 @@ contextBridge.exposeInMainWorld('api', {
 
   ventana: {
     desplegar: (si) => ipcRenderer.send('ui:desplegar', si),
+    tam: () => ipcRenderer.invoke('ui:tam'),
+    redimensionar: (ancho, alto) => ipcRenderer.send('ui:tam', ancho, alto),
     minimizar: () => ipcRenderer.send('ui:minimizar'),
     cerrar: () => ipcRenderer.send('ui:cerrar'),
   },

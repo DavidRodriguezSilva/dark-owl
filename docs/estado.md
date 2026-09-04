@@ -5,7 +5,8 @@ transcribir → copiar / limpiar / reprocesar.
 
 La ventana es una franja al estilo del Winamp pequeño —contador, tres mandos y
 medidor de nivel en la misma línea— sin marco del sistema, y crece para
-desplegar el panel de texto sólo cuando hay algo que enseñar.
+desplegar el panel de texto sólo cuando hay algo que enseñar. Se redimensiona
+con asideros propios: plegada sólo a lo ancho, desplegada libre.
 
 ## Medido en este equipo (WSL2, CPU)
 
@@ -51,6 +52,7 @@ for you, ask what you can do for your country.» (5,6 s).
 - El idioma está fijado en `auto` (`LANGUAGE` en `src/main/engine.js`). Si sólo
   se dicta en español, ponerlo en `'es'` es más rápido y más fiable en clips
   cortos.
-- La ventana usa `transparent: true` para las esquinas redondeadas. Funciona en
-  WSLg; en un escritorio sin compositor podría verse un recuadro negro en las
-  esquinas, y entonces habría que desactivarlo.
+- Bajo Linux se desactiva la aceleración por hardware: con ella, WSLg no
+  consigue crear los buffers de rasterización y llena la consola de
+  «Creation of StagingBuffer's SharedImage failed». Esta UI son cuatro cajas y
+  un canvas diminuto, así que por software va igual.

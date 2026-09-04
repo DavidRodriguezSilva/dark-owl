@@ -59,7 +59,10 @@ function pintar() {
   icono(btn.pausar, fase === 'pausado' ? 'i-play' : 'i-pause');
   btn.pausar.title = btn.pausar.ariaLabel = fase === 'pausado' ? 'Reanudar' : 'Pausar';
 
-  desplegar(Boolean(salida.value) || ocupado);
+  // Sólo el texto —o la espera de la transcripción, que enseña su aviso— abre el
+  // panel. 'abriendo' y 'cerrando' también son fases ocupadas, pero no tienen
+  // nada que enseñar: incluirlas hacía parpadear la ventana al pulsar grabar.
+  desplegar(Boolean(salida.value) || fase === 'transcribiendo');
 }
 
 /** El panel de texto y la ventana crecen juntos: sin texto, sólo la fila. */
@@ -183,6 +186,33 @@ btn.limpiar.addEventListener('click', () => {
   timer.textContent = '00:00';
   pintar();
 });
+
+/** Arrastra un asidero para redimensionar. */
+function asa(elemento, ejes) {
+  elemento.addEventListener('pointerdown', async (e) => {
+    e.preventDefault();
+    const [ancho0, alto0] = await window.api.ventana.tam();
+    const x0 = e.screenX;
+    const y0 = e.screenY;
+    // Capturar el puntero: si no, al salirse de la ventana se pierde el arrastre.
+    elemento.setPointerCapture(e.pointerId);
+
+    const mover = (ev) => {
+      window.api.ventana.redimensionar(
+        ejes.includes('x') ? ancho0 + (ev.screenX - x0) : ancho0,
+        ejes.includes('y') ? alto0 + (ev.screenY - y0) : alto0,
+      );
+    };
+    const soltar = () => {
+      elemento.removeEventListener('pointermove', mover);
+      elemento.removeEventListener('pointerup', soltar);
+    };
+    elemento.addEventListener('pointermove', mover);
+    elemento.addEventListener('pointerup', soltar);
+  });
+}
+
+for (const e of document.querySelectorAll('.asa')) asa(e, e.dataset.ejes);
 
 el('min').addEventListener('click', () => window.api.ventana.minimizar());
 el('close').addEventListener('click', () => window.api.ventana.cerrar());
