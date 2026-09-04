@@ -7,10 +7,17 @@ const TASA = 16000; // whisper.cpp trabaja a 16 kHz mono; pedirlo aquí evita re
  * 16 kHz y saca las muestras crudas con un AudioWorklet, que es exactamente lo
  * que whisper.cpp consume una vez envuelto en una cabecera WAV.
  */
+// Cuántas barras de nivel se conservan para el medidor.
+const BARRAS = 64;
+// Los mensajes del worklet llegan cada ~8 ms; agrupados a 70 ms el medidor se
+// lee cómodo en vez de vibrar.
+const MS_BARRA = 70;
+
 const Recorder = {
   stream: null,
   ctx: null,
   chunks: [],
+  niveles: [], // últimos valores para el medidor de la UI
   capturando: false, // false mientras está en pausa: los trozos se descartan
   msPrevios: 0, // tiempo acumulado en tramos anteriores a la última pausa
   inicioTramo: 0,
@@ -30,6 +37,7 @@ const Recorder = {
 
   async iniciar() {
     this.chunks = [];
+    this.niveles = [];
     this.msPrevios = 0;
 
     this.stream = await navigator.mediaDevices.getUserMedia({
@@ -45,8 +53,23 @@ const Recorder = {
     await this.ctx.audioWorklet.addModule('pcm-worklet.js');
 
     const nodo = new AudioWorkletNode(this.ctx, 'pcm-capture');
+    const acc = { suma: 0, n: 0, t: performance.now() };
     nodo.port.onmessage = (e) => {
-      if (this.capturando) this.chunks.push(e.data);
+      if (!this.capturando) return;
+      const f32 = e.data;
+      this.chunks.push(f32);
+
+      for (let i = 0; i < f32.length; i++) acc.suma += f32[i] * f32[i];
+      acc.n += f32.length;
+      const ahora = performance.now();
+      if (ahora - acc.t >= MS_BARRA && acc.n) {
+        // x4.5 lleva el rango de voz normal a casi todo el alto de la barra.
+        this.niveles.push(Math.min(1, Math.sqrt(acc.suma / acc.n) * 4.5));
+        if (this.niveles.length > BARRAS) this.niveles.shift();
+        acc.suma = 0;
+        acc.n = 0;
+        acc.t = ahora;
+      }
     };
     // La salida del worklet no se conecta a destination: capturar sin monitorear,
     // o el usuario se oye a sí mismo con eco.

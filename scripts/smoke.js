@@ -31,6 +31,11 @@ function comprobar(nombre, ok, detalle) {
 }
 
 ipcMain.handle('engine:status', () => engine.status());
+ipcMain.handle('copiar', () => {});
+// La ventana de la prueba es de tamaño fijo: los avisos de la UI se ignoran.
+ipcMain.on('ui:desplegar', () => {});
+ipcMain.on('ui:minimizar', () => {});
+ipcMain.on('ui:cerrar', () => {});
 ipcMain.handle('transcribe', async (_e, wav) => {
   try {
     const r = await engine.transcribe(Buffer.from(wav));
@@ -76,8 +81,9 @@ app.whenReady().then(async () => {
 
   await pulsar('record');
   await espera(1200);
-  const grabando = await leer(`({fase, ms: Recorder.transcurrido(), trozos: Recorder.chunks.length, tasa: Recorder.ctx.sampleRate})`);
+  const grabando = await leer(`({fase, ms: Recorder.transcurrido(), trozos: Recorder.chunks.length, tasa: Recorder.ctx.sampleRate, barras: Recorder.niveles.length})`);
   comprobar('graba a 16 kHz', grabando.fase === 'grabando' && grabando.tasa === 16000, `${grabando.trozos} trozos`);
+  comprobar('el medidor recibe nivel', grabando.barras > 0, `${grabando.barras} barras`);
 
   await pulsar('pause');
   const pausa0 = await leer(`({ms: Recorder.transcurrido(), trozos: Recorder.chunks.length})`);
@@ -98,8 +104,9 @@ app.whenReady().then(async () => {
   const cerrado = `fase === 'inicial' && document.getElementById('text').value !== ''`;
   for (let i = 0; i < 200 && !(await leer(cerrado)); i++) await espera(500);
 
-  const fin = await leer(`({fase, texto: document.getElementById('text').value, bytes: ultimoWav && ultimoWav.byteLength})`);
+  const fin = await leer(`({fase, texto: document.getElementById('text').value, bytes: ultimoWav && ultimoWav.byteLength, panel: !document.getElementById('panel').hidden})`);
   comprobar('el ciclo cierra', fin.fase === 'inicial', JSON.stringify(fin.texto));
+  comprobar('el panel se despliega con el texto', fin.panel === Boolean(fin.texto));
   if (consola.length) console.log(`  consola del renderer: ${consola.join(' · ')}`);
 
   terminar();

@@ -64,17 +64,26 @@ falta o falló — el detalle está en el tooltip.
 
 ## Uso
 
-Cinco controles, todos icono:
+En reposo la ventana es una sola franja, al estilo del Winamp pequeño: contador,
+los tres mandos y el medidor de nivel, todo en la misma línea.
+
+```
+● WHISPER                                          –  ✕
+ 00:00   ( ● ) ( ⏸ ) ( ■ )   ▁▃▅▂▆▃▁▅▂▄▇▃▁▅▂
+```
 
 | | |
 |---|---|
 | ● | grabar |
 | ⏸ / ▶ | pausar y reanudar (sin cerrar el micrófono: reanudar es instantáneo) |
-| ■ | detener → transcribe y muestra el texto |
-| ⟳ | reprocesar el último audio sin volver a grabar |
-| 🗑 | limpiar y volver al inicio |
+| ■ | detener → transcribe |
 
-El texto es editable y seleccionable: se copia con `Ctrl+C` de toda la vida.
+El medidor no es decorativo: son los niveles reales del micrófono, agrupados a
+70 ms. Mientras grabas se mueve en rojo; en pausa se congela en gris.
+
+Al llegar el texto, la ventana **crece** y despliega el panel con tres
+herramientas — copiar, reprocesar el último audio sin volver a grabar, y
+limpiar. Al limpiar vuelve a plegarse a la franja.
 
 Descarta por su cuenta lo que no vale la pena mandar al motor: menos de 350 ms, o
 audio por debajo del nivel de voz. Sin esa segunda comprobación whisper no se
@@ -109,13 +118,17 @@ src/main/engine.js     ciclo de vida de whisper-server y POST /inference
 src/main/text.js       limpieza del transcrito
 src/main/paths.js      rutas de engine y modelo, en desarrollo y empaquetado
 src/preload/           puente contextBridge; única superficie visible del renderer
-src/renderer/          UI, captura de audio y worklet PCM
+src/renderer/          UI, captura de audio, worklet PCM y medidor de nivel
 scripts/               setup-whisper.js — compila el engine y baja el modelo
 vendor/                engine compilado + modelos (nunca versionado)
 ```
 
 - **Electron** con `contextIsolation: true` y `nodeIntegration: false`. El
   renderer sólo accede a lo que `preload.js` expone en `window.api`.
+- Ventana **sin marco del sistema** (`frame: false`, `transparent: true`): la
+  barra de título la pinta el renderer, que es lo que permite las esquinas
+  redondeadas y la franja compacta. El alto lo fija el main entre dos estados,
+  plegado y desplegado.
 - HTML + CSS + JS plano. Sin framework de UI, sin bundler, sin TypeScript.
 - Cero dependencias en runtime.
 - El audio se captura con **WebAudio a 16 kHz mono** (`AudioContext` +

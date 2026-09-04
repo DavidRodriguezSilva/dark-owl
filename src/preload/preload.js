@@ -12,4 +12,11 @@ contextBridge.exposeInMainWorld('api', {
   },
   /** @param {ArrayBuffer} wav */
   transcribe: (wav) => ipcRenderer.invoke('transcribe', wav),
+  copiar: (texto) => ipcRenderer.invoke('copiar', texto),
+
+  ventana: {
+    desplegar: (si) => ipcRenderer.send('ui:desplegar', si),
+    minimizar: () => ipcRenderer.send('ui:minimizar'),
+    cerrar: () => ipcRenderer.send('ui:cerrar'),
+  },
 });

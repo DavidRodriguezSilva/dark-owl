@@ -1,181 +1,265 @@
 :root {
-  --bg: #12131a;
-  --panel: #1b1d27;
-  --line: #2a2d3a;
-  --text: #e7e9f0;
-  --muted: #767c91;
-  --accent: #e0524a;
-  --ok: #4ac07f;
-  --wait: #d8a83c;
+  --bg: #0d0e13;
+  --barra: #161923;
+  --panel: #1c1f2a;
+  --tecla: #2b3040;
+  --tecla-alta: #3b4256;
+  --linea: #333949;
+  --texto: #f2f4f9;
+  --tenue: #939ab0;
+  --rec: #f0483c;
+  --rec-alta: #ff5a4d;
+  --ok: #35d391;
+  --espera: #f0b429;
 }
 
 * {
   box-sizing: border-box;
 }
 
+html,
 body {
+  height: 100%;
   margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font: 13px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: transparent; /* la ventana es sin marco: el fondo lo pinta .win */
+  color: var(--texto);
+  font: 600 13px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   user-select: none;
+  overflow: hidden;
 }
 
 .sprite {
   display: none;
 }
 
-.app {
+.win {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  height: 100vh;
-  padding: 12px;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  border: 1px solid var(--linea);
+  border-radius: 12px;
 }
 
-/* ---- escenario de grabación ---- */
+/* ---- barra de título propia ---- */
 
-.stage {
-  position: relative;
+.bar {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 12px;
-  padding: 18px 16px 16px;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 14px;
+  gap: 8px;
+  height: 30px;
+  padding: 0 6px 0 11px;
+  background: var(--barra);
+  border-bottom: 1px solid var(--linea);
+  -webkit-app-region: drag;
 }
 
-/* Único indicador de estado del engine: un punto. El detalle va en el tooltip. */
 .dot {
-  position: absolute;
-  top: 10px;
-  right: 10px;
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--wait);
+  background: var(--espera);
+  flex: none;
 }
-.dot--ok  { background: var(--ok); }
-.dot--off { background: var(--accent); }
+.dot--ok { background: var(--ok); }
+.dot--off { background: var(--rec); }
 
-.timer {
-  font-size: 26px;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.03em;
-  color: var(--muted);
-}
-.timer--live {
-  color: var(--text);
+.marca {
+  flex: 1;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--tenue);
 }
 
-.pad {
+.bar__ctl {
   display: flex;
-  gap: 8px;
-}
-.pad--end {
-  justify-content: flex-end;
+  gap: 2px;
+  -webkit-app-region: no-drag;
 }
 
-/* ---- botones de icono ---- */
-
-.icon {
+.wbtn {
   display: grid;
   place-items: center;
-  width: 46px;
-  height: 46px;
+  width: 26px;
+  height: 22px;
   padding: 0;
-  border: 1px solid var(--line);
-  border-radius: 50%;
-  background: #232634;
-  color: var(--text);
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--tenue);
   cursor: pointer;
 }
-.icon svg {
-  width: 22px;
-  height: 22px;
+.wbtn svg {
+  width: 15px;
+  height: 15px;
+}
+.wbtn:hover {
+  background: var(--tecla);
+  color: var(--texto);
+}
+.wbtn--x:hover {
+  background: var(--rec);
+  color: #fff;
+}
+
+/* ---- fila de mandos: todo en una línea ---- */
+
+.deck {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 11px;
+}
+
+.timer {
+  flex: none;
+  min-width: 54px;
+  font-size: 17px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  color: var(--tenue);
+}
+.timer--live {
+  color: var(--texto);
+}
+
+.key {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 9px;
+  background: var(--tecla);
+  color: var(--texto);
+  cursor: pointer;
+}
+.key svg {
+  width: 19px;
+  height: 19px;
   fill: currentColor;
   pointer-events: none;
 }
-.icon:hover:not(:disabled) {
-  border-color: #454b61;
+.key:hover:not(:disabled) {
+  background: var(--tecla-alta);
 }
-.icon:disabled {
-  opacity: 0.3;
+.key:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.key:disabled {
+  opacity: 0.28;
   cursor: not-allowed;
 }
-.icon:focus-visible {
-  outline: 2px solid var(--muted);
+.key:focus-visible {
+  outline: 2px solid var(--tenue);
   outline-offset: 2px;
 }
 
-.icon--rec {
-  background: var(--accent);
-  border-color: var(--accent);
+.key--rec {
+  background: var(--rec);
   color: #fff;
 }
-/* Grabando: el icono late para que el estado se lea sin texto. */
-.icon--rec.is-live svg {
-  animation: pulse 1.4s ease-in-out infinite;
-}
-@keyframes pulse {
-  50% { opacity: 0.35; }
+.key--rec:hover:not(:disabled) {
+  background: var(--rec-alta);
 }
 
-.icon--sm {
-  width: 32px;
-  height: 32px;
-  border-radius: 9px;
-  background: transparent;
-  color: var(--muted);
-}
-.icon--sm svg {
-  width: 17px;
-  height: 17px;
-}
-.icon--sm:hover:not(:disabled) {
-  color: var(--text);
+/* Medidor de nivel: ocupa lo que sobra de la línea. */
+.viz {
+  flex: 1;
+  min-width: 0;
+  height: 26px;
+  margin-left: 2px;
 }
 
-/* ---- salida ---- */
+/* ---- panel de texto, se despliega sólo si hay algo ---- */
 
-.output {
+/* Un selector de clase gana al [hidden] de la hoja del navegador, así que el
+   display:flex de abajo lo dejaría visible. Hay que apagarlo explícitamente. */
+.panel[hidden] {
+  display: none;
+}
+
+.panel {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   min-height: 0;
+  padding: 0 11px 10px;
 }
 
 textarea {
   flex: 1;
   min-height: 0;
-  padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: 14px;
+  padding: 10px 11px;
+  border: 1px solid var(--linea);
+  border-radius: 10px;
   background: var(--panel);
-  color: var(--text);
-  font: inherit;
-  line-height: 1.6;
+  color: var(--texto);
+  font: 400 13px/1.55 inherit;
+  font-family: inherit;
   resize: none;
   user-select: text;
 }
 textarea::placeholder {
-  color: var(--muted);
+  color: var(--tenue);
 }
 textarea:focus {
   outline: none;
-  border-color: #454b61;
+  border-color: var(--tecla-alta);
+}
+
+.tools {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.tool {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--tenue);
+  cursor: pointer;
+}
+.tool svg {
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+}
+.tool:hover:not(:disabled) {
+  background: var(--tecla);
+  color: var(--texto);
+}
+.tool:disabled {
+  opacity: 0.28;
+  cursor: not-allowed;
+}
+.tool.hecho {
+  color: var(--ok);
+}
+
+/* Transcribiendo: el punto del engine late. Único aviso que necesita una UI
+   sin texto. */
+body.is-busy .dot {
+  background: var(--espera);
+  animation: latir 1s ease-in-out infinite;
+}
+@keyframes latir {
+  50% { opacity: 0.3; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .icon--rec.is-live svg { animation: none; }
-}
-
-/* Transcribiendo: el punto del engine late en ámbar. Es el único aviso que
-   necesita una UI sin texto. */
-body.is-busy .dot {
-  background: var(--wait);
-  animation: pulse 1s ease-in-out infinite;
+  body.is-busy .dot { animation: none; }
 }

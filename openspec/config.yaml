@@ -64,9 +64,12 @@ context: |
   - **Puerta de voz** (nuestra, WhisperPress no la tiene): whisper no se calla
     ante el silencio, devuelve texto inventado y a veces en otro alfabeto. Antes
     de llamar al motor, `src/renderer/nivel.js` mide qué proporción de los tramos
-    de 100 ms tiene energía de voz; por debajo de 0,10 no se transcribe. Ni el
-    pico ni el RMS global sirven: un chasquido al abrir el micrófono ya alcanza
-    un pico de 0,2, y el RMS global se diluye con las pausas del habla.
+    de 100 ms supera un umbral de energía; por debajo de 0,10 no se transcribe.
+    Ni el pico ni el RMS global sirven: un chasquido al abrir el micrófono ya
+    alcanza un pico de 0,4, y el RMS global se diluye con las pausas del habla.
+    Los dos umbrales (0,04 por tramo, 0,10 de proporción) salen de un barrido
+    contra habla real; están tabulados en docs/referencia-whisperpress.md. Si
+    hay que reajustarlos, repetir el barrido — no moverlos a ojo.
 
   ## Layout
     src/main/       proceso principal: ventana, IPC, engine, rutas
