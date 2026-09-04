@@ -1,0 +1,49 @@
+{
+  "name": "whisper-app",
+  "productName": "Whisper App",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Grabadora minimalista de voz a texto, 100% offline, sobre whisper.cpp. Grabar, pausar, detener, transcribir, limpiar, reprocesar.",
+  "main": "src/main/main.js",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "electron .",
+    "setup": "node scripts/setup-whisper.js",
+    "setup:cuda": "node scripts/setup-whisper.js --cuda",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^42.4.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "app.whisper.mini",
+    "productName": "Whisper App",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "vendor",
+        "to": "vendor",
+        "filter": ["**/*"]
+      }
+    ],
+    "linux": {
+      "target": ["AppImage"],
+      "category": "AudioVideo"
+    },
+    "win": {
+      "target": ["portable"]
+    }
+  }
+}
