@@ -1,0 +1,24 @@
+# deps
+node_modules/
+
+# build output
+release/
+dist/
+
+# whisper.cpp engine binaries + models (descargados/compilados localmente, nunca versionados)
+vendor/
+models/
+*.bin
+
+# runtime
+*.log
+.cache/
+tmp/
+
+# os
+.DS_Store
+Thumbs.db
+
+# editor
+.vscode/
+.idea/
