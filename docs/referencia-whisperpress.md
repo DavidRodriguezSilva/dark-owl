@@ -111,10 +111,33 @@ Ya está implementado así en `scripts/setup-whisper.js`.
 | Ventana overlay, bandeja, i18n | Superficie de UI que no cabe en "súper minimalista". |
 | `transcribeFile` con streaming | Es para audios largos; los nuestros son cortos. |
 
-## Riesgo conocido a verificar
+## Lo que tuvimos que añadir por nuestra cuenta
 
-Nuestro `index.html` declara CSP `script-src 'self'`. `audioWorklet.addModule()`
-se rige por `script-src`, y bajo el protocolo `file://` el origen `'self'` puede
-comportarse de forma inconsistente. WhisperPress no declara CSP, así que no nos
-sirve de referencia. Si el worklet no carga: cargarlo desde un `blob:` o servir
-el renderer con un protocolo propio registrado en el main.
+**Puerta de voz.** WhisperPress descarta clips de menos de 350 ms y limpia los
+marcadores `[BLANK_AUDIO]`, pero eso no cubre el caso real: con `-l auto` y
+beam search, whisper ante audio mudo no devuelve un marcador — devuelve texto
+inventado. En nuestras pruebas salió `ლლლლლლლლლლ`, en georgiano.
+
+`src/renderer/nivel.js` mide la proporción de tramos de 100 ms con energía de
+voz. Medido:
+
+| Entrada | proporción de voz | rms | pico |
+|---|---|---|---|
+| habla real (`samples/jfk.wav`) | 0,655 | 0,142 | 0,783 |
+| silencio digital | 0,000 | 0,000 | 0,000 |
+| ruido de fondo | 0,000 | 0,006 | 0,010 |
+| ruido + un chasquido | 0,050 | 0,010 | 0,220 |
+
+Por eso la decisión no usa ni el pico ni el RMS global: el chasquido de abrir el
+micrófono dispara el pico hasta 0,22, y el RMS global se diluye con las pausas
+naturales del habla. La proporción de tramos con voz separa los casos con
+holgura, y el umbral quedó en 0,10.
+
+## Riesgo que estaba anotado y quedó descartado
+
+Nuestro `index.html` declara CSP `script-src 'self'`, y `audioWorklet.addModule()`
+se rige por `script-src`. Bajo el protocolo `file://` el origen `'self'` puede
+comportarse de forma inconsistente, y WhisperPress no declara CSP, así que no
+servía de referencia. **Comprobado en Electron 42 bajo WSLg: el worklet carga
+sin problema** y el `AudioContext` respeta los 16 kHz pedidos. No hace falta ni
+`blob:` ni un protocolo propio.

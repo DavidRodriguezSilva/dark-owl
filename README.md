@@ -58,6 +58,28 @@ npm run setup        # compila whisper.cpp + descarga ggml-small.bin  (~5-10 min
 npm start
 ```
 
+Al abrir, la app levanta `whisper-server` en segundo plano y carga el modelo. El
+punto de la esquina lo indica: **ámbar** cargando, **verde** listo, **rojo** algo
+falta o falló — el detalle está en el tooltip.
+
+## Uso
+
+Cinco controles, todos icono:
+
+| | |
+|---|---|
+| ● | grabar |
+| ⏸ / ▶ | pausar y reanudar (sin cerrar el micrófono: reanudar es instantáneo) |
+| ■ | detener → transcribe y muestra el texto |
+| ⟳ | reprocesar el último audio sin volver a grabar |
+| 🗑 | limpiar y volver al inicio |
+
+El texto es editable y seleccionable: se copia con `Ctrl+C` de toda la vida.
+
+Descarta por su cuenta lo que no vale la pena mandar al motor: menos de 350 ms, o
+audio por debajo del nivel de voz. Sin esa segunda comprobación whisper no se
+calla ante el silencio — **inventa** texto, a veces en otro alfabeto.
+
 Con GPU NVIDIA:
 
 ```bash
@@ -67,14 +89,29 @@ npm run setup:cuda
 Todo lo que `setup` produce queda en `vendor/` (git-ignored). A partir de ahí
 la app funciona sin red.
 
+## Verificar que sigue funcionando
+
+```bash
+npm run smoke
+```
+
+Abre la app de verdad, graba del micrófono, pausa, reanuda y detiene, y
+comprueba lo que ninguna prueba unitaria ve: que el worklet carga bajo la CSP,
+que la pausa congela de verdad la captura y que el WAV llega al motor por IPC.
+Sin voz real de por medio, lo esperable es que la puerta de voz descarte la
+grabación — eso también es un ciclo completo.
+
 ## Arquitectura
 
 ```
-src/main/       proceso principal — ventana, IPC, engine, rutas
-src/preload/    puente contextBridge; única superficie visible del renderer
-src/renderer/   UI — index.html, app.css, app.js
-scripts/        setup-whisper.js — compila el engine y baja el modelo
-vendor/         engine compilado + modelos (nunca versionado)
+src/main/main.js       ventana y manejadores IPC
+src/main/engine.js     ciclo de vida de whisper-server y POST /inference
+src/main/text.js       limpieza del transcrito
+src/main/paths.js      rutas de engine y modelo, en desarrollo y empaquetado
+src/preload/           puente contextBridge; única superficie visible del renderer
+src/renderer/          UI, captura de audio y worklet PCM
+scripts/               setup-whisper.js — compila el engine y baja el modelo
+vendor/                engine compilado + modelos (nunca versionado)
 ```
 
 - **Electron** con `contextIsolation: true` y `nodeIntegration: false`. El
