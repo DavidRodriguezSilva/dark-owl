@@ -39,7 +39,11 @@
         "from": "vendor",
         "to": "vendor",
         "filter": [
-          "**/*"
+          "bin/whisper-server*",
+          "bin/whisper-cli*",
+          "bin/*.dll",
+          "lib/**",
+          "models/*.bin"
         ]
       }
     ],
@@ -51,8 +55,20 @@
     },
     "win": {
       "target": [
-        "portable"
-      ]
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "perMachine": false
     }
   }
 }

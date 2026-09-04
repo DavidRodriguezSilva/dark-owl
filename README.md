@@ -173,6 +173,21 @@ Cross-platform Linux + Windows. El desarrollo y las pruebas se hacen en
 Linux/WSL2 (WSLg, micrófono vía PulseAudio); el código no asume APIs
 exclusivas de una plataforma.
 
+## Empaquetar
+
+```bash
+pnpm run pack      # carpeta sin comprimir en release/, para probar
+pnpm run dist      # AppImage en Linux
+```
+
+El paquete lleva dentro el motor y el modelo, así que pesa unos 780 MB y
+funciona sin red desde el primer arranque.
+
+Para el ejecutable de Windows hay que construir **en Windows**: aquí `vendor/`
+contiene binarios ELF y un paquete armado desde WSL arrancaría y fallaría al
+transcribir. Los pasos están en [`docs/windows.md`](docs/windows.md), incluido
+qué esperar de SmartScreen con un `.exe` sin firmar.
+
 ## Cómo se trabaja este repo
 
 Los cambios se planifican con [OpenSpec](https://github.com/Fission-AI/OpenSpec)

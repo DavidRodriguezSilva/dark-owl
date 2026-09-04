@@ -45,10 +45,9 @@ for you, ask what you can do for your country.» (5,6 s).
 
 ## Pendiente
 
-- **Empaquetado**: AppImage en Linux y ejecutable de Windows. Sin probar.
-  Ojo con Windows: `vendor/` contiene binarios ELF, así que un paquete
-  construido desde WSL arrancaría y fallaría al transcribir — hace falta
-  compilar whisper.cpp para Windows antes.
+- **Ejecutable de Windows**: hay que construirlo en Windows con MSVC; los pasos
+  están en `docs/windows.md`. Desde WSL no sale: `vendor/` contiene binarios
+  ELF, así que el paquete arrancaría y fallaría al transcribir.
 - El idioma está fijado en `auto` (`LANGUAGE` en `src/main/engine.js`). Si sólo
   se dicta en español, ponerlo en `'es'` es más rápido y más fiable en clips
   cortos.
