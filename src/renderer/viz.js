@@ -47,7 +47,7 @@ const Viz = {
 
     ctx.clearRect(0, 0, w, h);
     ctx.fillStyle =
-      estado === 'grabando' ? '#f0483c' : estado === 'pausado' ? '#5c6480' : '#2b3040';
+      estado === 'grabando' ? '#f0483c' : estado === 'pausado' ? '#5c6480' : '#3b4256';
 
     // Las barras entran por la derecha: la más reciente queda pegada al borde.
     for (let i = 0; i < n; i++) {

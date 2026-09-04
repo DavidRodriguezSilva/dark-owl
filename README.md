@@ -39,7 +39,7 @@ minimalista*.
 
 | | |
 |---|---|
-| Node.js | 20+ (probado en 24) |
+| Node.js | 20+ (probado en 24) · pnpm |
 | Compilador | `git`, `cmake`, `build-essential` (Linux) · MSVC + CMake (Windows) |
 | Disco | ~600 MB (modelo `small` + engine) |
 | Opcional | GPU NVIDIA para compilar el engine con CUDA |
@@ -53,9 +53,9 @@ sudo apt install -y git cmake build-essential
 ## Puesta en marcha
 
 ```bash
-npm install
-npm run setup        # compila whisper.cpp + descarga ggml-small.bin  (~5-10 min)
-npm start
+pnpm install
+pnpm run setup       # compila whisper.cpp + descarga ggml-small.bin  (~5-10 min)
+pnpm start
 ```
 
 Al abrir, la app levanta `whisper-server` en segundo plano y carga el modelo. El
@@ -85,6 +85,11 @@ Al llegar el texto, la ventana **crece** y despliega el panel con tres
 herramientas — copiar, reprocesar el último audio sin volver a grabar, y
 limpiar. Al limpiar vuelve a plegarse a la franja.
 
+Se redimensiona arrastrando el borde derecho, el inferior o la esquina.
+Plegada sólo se ensancha —no tendría sentido alargar una franja vacía—; con el
+texto desplegado es libre, y recuerda el alto que le dejaste para la próxima vez
+que se despliegue.
+
 Descarta por su cuenta lo que no vale la pena mandar al motor: menos de 350 ms, o
 audio por debajo del nivel de voz. Sin esa segunda comprobación whisper no se
 calla ante el silencio — **inventa** texto, a veces en otro alfabeto.
@@ -92,7 +97,7 @@ calla ante el silencio — **inventa** texto, a veces en otro alfabeto.
 Con GPU NVIDIA:
 
 ```bash
-npm run setup:cuda
+pnpm run setup:cuda
 ```
 
 Todo lo que `setup` produce queda en `vendor/` (git-ignored). A partir de ahí
@@ -101,7 +106,7 @@ la app funciona sin red.
 ## Verificar que sigue funcionando
 
 ```bash
-npm run smoke
+pnpm run smoke
 ```
 
 Abre la app de verdad, graba del micrófono, pausa, reanuda y detiene, y
@@ -125,10 +130,12 @@ vendor/                engine compilado + modelos (nunca versionado)
 
 - **Electron** con `contextIsolation: true` y `nodeIntegration: false`. El
   renderer sólo accede a lo que `preload.js` expone en `window.api`.
-- Ventana **sin marco del sistema** (`frame: false`, `transparent: true`): la
-  barra de título la pinta el renderer, que es lo que permite las esquinas
-  redondeadas y la franja compacta. El alto lo fija el main entre dos estados,
-  plegado y desplegado.
+- Ventana **sin marco del sistema** (`frame: false`): la barra de título, los
+  botones de minimizar/cerrar y los asideros de redimensionado los pinta el
+  renderer. El alto lo gobierna el main entre plegado y desplegado.
+- Los asideros son propios y no del gestor de ventanas: una ventana sin marco
+  depende de él para poder agarrarse por el borde, y bajo WSLg eso no está
+  garantizado.
 - HTML + CSS + JS plano. Sin framework de UI, sin bundler, sin TypeScript.
 - Cero dependencias en runtime.
 - El audio se captura con **WebAudio a 16 kHz mono** (`AudioContext` +

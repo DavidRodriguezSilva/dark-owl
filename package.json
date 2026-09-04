@@ -9,6 +9,7 @@
   "engines": {
     "node": ">=20"
   },
+  "packageManager": "pnpm@11.10.0",
   "scripts": {
     "start": "electron .",
     "setup": "node scripts/setup-whisper.js",
