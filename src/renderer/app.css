@@ -172,3 +172,10 @@ textarea:focus {
 @media (prefers-reduced-motion: reduce) {
   .icon--rec.is-live svg { animation: none; }
 }
+
+/* Transcribiendo: el punto del engine late en ámbar. Es el único aviso que
+   necesita una UI sin texto. */
+body.is-busy .dot {
+  background: var(--wait);
+  animation: pulse 1s ease-in-out infinite;
+}

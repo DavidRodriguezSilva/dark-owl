@@ -2,7 +2,8 @@
 
 const path = require('node:path');
 const { app, BrowserWindow, ipcMain, shell } = require('electron');
-const paths = require('./paths');
+const engine = require('./engine');
+const text = require('./text');
 
 // WSLg / Linux sin GPU acelerada: evita cuelgues al crear la ventana.
 if (process.platform === 'linux') {
@@ -39,12 +40,27 @@ function createWindow() {
   });
 }
 
-ipcMain.handle('engine:status', () => {
-  const s = paths.engineStatus();
-  return { hasCli: s.hasCli, hasModel: s.hasModel, ready: s.ready, cli: s.cli, model: s.model };
+ipcMain.handle('engine:status', () => engine.status());
+
+ipcMain.handle('transcribe', async (_event, wav) => {
+  try {
+    const { text: crudo, language } = await engine.transcribe(Buffer.from(wav));
+    return { text: text.limpiar(crudo), language };
+  } catch (err) {
+    return { error: String(err.message || err) };
+  }
 });
 
-app.whenReady().then(createWindow);
+engine.on('status', (estado) => {
+  if (win && !win.isDestroyed()) win.webContents.send('engine:status', estado);
+});
+
+app.whenReady().then(() => {
+  createWindow();
+  // Se calienta en segundo plano: para cuando el usuario termine de grabar, el
+  // modelo ya está cargado.
+  engine.start().catch((err) => console.error('el engine no arrancó', err));
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
@@ -53,3 +69,6 @@ app.on('window-all-closed', () => {
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) createWindow();
 });
+
+// Sin esto el proceso de whisper-server sobrevive a la app.
+app.on('before-quit', () => engine.stop());

@@ -9,10 +9,12 @@ const EXE = IS_WIN ? '.exe' : '';
 
 /** Raíz donde viven el engine compilado y los modelos. */
 function rootDir() {
-  // Empaquetado: resources/vendor · desarrollo: <repo>/vendor
+  // En desarrollo se ancla en este fichero, no en app.getAppPath(): esa ruta
+  // depende de cómo se invoque a electron y apunta mal al lanzar un script
+  // suelto. __dirname siempre es <repo>/src/main.
   return app.isPackaged
     ? path.join(process.resourcesPath, 'vendor')
-    : path.join(app.getAppPath(), 'vendor');
+    : path.resolve(__dirname, '..', '..', 'vendor');
 }
 
 function binDir() {

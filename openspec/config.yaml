@@ -61,6 +61,12 @@ context: |
     audios de menos de ~350 ms sin llamar al motor.
   - **Descargas**: escribir a `<dest>.part` y renombrar al terminar, para que una
     descarga cortada no deje un modelo corrupto que parece válido.
+  - **Puerta de voz** (nuestra, WhisperPress no la tiene): whisper no se calla
+    ante el silencio, devuelve texto inventado y a veces en otro alfabeto. Antes
+    de llamar al motor, `src/renderer/nivel.js` mide qué proporción de los tramos
+    de 100 ms tiene energía de voz; por debajo de 0,10 no se transcribe. Ni el
+    pico ni el RMS global sirven: un chasquido al abrir el micrófono ya alcanza
+    un pico de 0,2, y el RMS global se diluye con las pausas del habla.
 
   ## Layout
     src/main/       proceso principal: ventana, IPC, engine, rutas

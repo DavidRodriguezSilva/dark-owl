@@ -14,7 +14,8 @@
     "setup": "node scripts/setup-whisper.js",
     "setup:cuda": "node scripts/setup-whisper.js --cuda",
     "pack": "electron-builder --dir",
-    "dist": "electron-builder"
+    "dist": "electron-builder",
+    "smoke": "electron scripts/smoke.js"
   },
   "devDependencies": {
     "electron": "^42.4.0",
@@ -35,15 +36,21 @@
       {
         "from": "vendor",
         "to": "vendor",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "linux": {
-      "target": ["AppImage"],
+      "target": [
+        "AppImage"
+      ],
       "category": "AudioVideo"
     },
     "win": {
-      "target": ["portable"]
+      "target": [
+        "portable"
+      ]
     }
   }
 }

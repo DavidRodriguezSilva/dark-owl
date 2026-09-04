@@ -5,4 +5,11 @@ const { contextBridge, ipcRenderer } = require('electron');
 // Única superficie que el renderer ve del proceso main.
 contextBridge.exposeInMainWorld('api', {
   engineStatus: () => ipcRenderer.invoke('engine:status'),
+  onEngineStatus: (cb) => {
+    const handler = (_event, estado) => cb(estado);
+    ipcRenderer.on('engine:status', handler);
+    return () => ipcRenderer.off('engine:status', handler);
+  },
+  /** @param {ArrayBuffer} wav */
+  transcribe: (wav) => ipcRenderer.invoke('transcribe', wav),
 });
