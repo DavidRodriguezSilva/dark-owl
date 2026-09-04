@@ -6,6 +6,7 @@ const net = require('node:net');
 const path = require('node:path');
 const { spawn } = require('node:child_process');
 const { EventEmitter } = require('node:events');
+const { app } = require('electron');
 const paths = require('./paths');
 
 // 'auto' detecta el idioma en cada clip. Con audios muy cortos la detección
@@ -54,6 +55,55 @@ class Engine extends EventEmitter {
     return Math.max(2, Math.min(8, Math.floor(os.cpus().length / 2)));
   }
 
+  // Si a la app la matan a señal en vez de cerrarla, whisper-server sobrevive
+  // con el modelo entero en memoria. Se anota su PID para poder recogerlo en el
+  // siguiente arranque.
+  _ficheroPid() {
+    return path.join(app.getPath('userData'), 'engine.pid');
+  }
+
+  _anotarPid(pid) {
+    try {
+      fs.mkdirSync(path.dirname(this._ficheroPid()), { recursive: true });
+      fs.writeFileSync(this._ficheroPid(), String(pid));
+    } catch {
+      /* si no se puede anotar, sólo se pierde la recogida */
+    }
+  }
+
+  _olvidarPid() {
+    try {
+      fs.rmSync(this._ficheroPid(), { force: true });
+    } catch {
+      /* da igual */
+    }
+  }
+
+  /**
+   * Mata un servidor huérfano de una ejecución anterior. Sólo si se puede
+   * confirmar por su línea de órdenes que es nuestro: los PID se reutilizan, y
+   * matar a ciegas por número sería matar a un tercero.
+   */
+  _recogerHuerfano() {
+    let pid;
+    try {
+      pid = Number(fs.readFileSync(this._ficheroPid(), 'utf8').trim());
+    } catch {
+      return;
+    }
+    this._olvidarPid();
+    if (!pid || pid === process.pid) return;
+
+    try {
+      const linea = fs.readFileSync(`/proc/${pid}/cmdline`, 'utf8');
+      if (!linea.includes(paths.binary('whisper-server'))) return;
+      process.kill(pid);
+      console.log(`recogido un whisper-server huérfano (pid ${pid})`);
+    } catch {
+      /* ya no existe, o no es Linux y no se puede comprobar */
+    }
+  }
+
   _freePort() {
     return new Promise((resolve, reject) => {
       const srv = net.createServer();
@@ -95,8 +145,10 @@ class Engine extends EventEmitter {
       '-bs', '5', '-bo', '5',
     ];
 
+    this._recogerHuerfano();
     const proc = spawn(exe, args, { cwd: path.dirname(exe), windowsHide: true });
     this.proc = proc;
+    this._anotarPid(proc.pid);
 
     let stderrTail = '';
     proc.stderr.on('data', (d) => { stderrTail = (stderrTail + d).slice(-2000); });
@@ -135,6 +187,10 @@ class Engine extends EventEmitter {
       const p = this.proc;
       this.proc = null;
       try { p.kill(); } catch { /* ya estaba muerto */ }
+      // Sólo se olvida el PID si el proceso era nuestro y lo acabamos de matar.
+      // start() llama a stop() antes de arrancar, y borrarlo siempre dejaría a
+      // _recogerHuerfano() sin nada que leer.
+      this._olvidarPid();
     }
     if (this.state !== 'stopped') this._set('stopped');
   }

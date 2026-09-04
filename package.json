@@ -16,7 +16,8 @@
     "setup:cuda": "node scripts/setup-whisper.js --cuda",
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
-    "smoke": "electron scripts/smoke.js"
+    "smoke": "electron scripts/smoke.js",
+    "smoke:motor": "electron scripts/smoke-motor.js"
   },
   "devDependencies": {
     "electron": "^42.4.0",
