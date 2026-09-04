@@ -33,8 +33,11 @@ function nivelVoz(f32, tasa = 16000) {
     tramos.push(Math.sqrt(suma / (fin - i)));
   }
 
-  // Energía de voz en un tramo de 100 ms, con control automático de ganancia.
-  const UMBRAL = 0.02;
+  // Energía mínima para dar un tramo de 100 ms por hablado, con control
+  // automático de ganancia activo. Calibrado con un barrido: a 0,02 el ruido
+  // ambiente puntuaba 1,000 (todos los tramos contaban como voz) y las
+  // alucinaciones de whisper se colaban. Desde 0,03 el ambiente cae a 0,05.
+  const UMBRAL = 0.04;
   const conVoz = tramos.filter((r) => r >= UMBRAL).length;
 
   return {

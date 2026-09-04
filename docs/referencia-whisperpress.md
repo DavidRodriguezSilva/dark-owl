@@ -118,20 +118,28 @@ marcadores `[BLANK_AUDIO]`, pero eso no cubre el caso real: con `-l auto` y
 beam search, whisper ante audio mudo no devuelve un marcador — devuelve texto
 inventado. En nuestras pruebas salió `ლლლლლლლლლლ`, en georgiano.
 
-`src/renderer/nivel.js` mide la proporción de tramos de 100 ms con energía de
-voz. Medido:
+`src/renderer/nivel.js` mide la proporción de tramos de 100 ms cuya energía
+supera un umbral. No usa el pico ni el RMS global: el chasquido de abrir el
+micrófono dispara el pico hasta 0,4, y el RMS global se diluye con las pausas
+naturales del habla.
 
-| Entrada | proporción de voz | rms | pico |
+Los dos números se calibraron con un barrido, no a ojo. Con el umbral por tramo
+en 0,02 el ruido ambiente de este equipo puntuaba **1,000** — todos los tramos
+contaban como voz — y las alucinaciones se colaban igual. Barrido con habla
+real, el ambiente medido (rms 0,030, pico 0,398) y el caso difícil de un segundo
+de voz dentro de tres:
+
+| umbral por tramo | `jfk.wav` | ambiente | 1 s de voz en 3 s |
 |---|---|---|---|
-| habla real (`samples/jfk.wav`) | 0,655 | 0,142 | 0,783 |
-| silencio digital | 0,000 | 0,000 | 0,000 |
-| ruido de fondo | 0,000 | 0,006 | 0,010 |
-| ruido + un chasquido | 0,050 | 0,010 | 0,220 |
+| 0,02 | 0,655 | **1,000** | 0,233 |
+| 0,03 | 0,582 | 0,050 | 0,233 |
+| **0,04** | **0,545** | **0,050** | **0,233** |
+| 0,05 | 0,518 | 0,050 | 0,200 |
+| 0,08 | 0,455 | 0,050 | 0,167 |
 
-Por eso la decisión no usa ni el pico ni el RMS global: el chasquido de abrir el
-micrófono dispara el pico hasta 0,22, y el RMS global se diluye con las pausas
-naturales del habla. La proporción de tramos con voz separa los casos con
-holgura, y el umbral quedó en 0,10.
+Queda en **0,04 por tramo** y **0,10 de proporción**: el ambiente se descarta con
+holgura y hasta una frase corta rodeada de silencio pasa con más del doble de
+margen.
 
 ## Riesgo que estaba anotado y quedó descartado
 

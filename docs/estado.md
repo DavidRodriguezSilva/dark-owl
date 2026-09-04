@@ -1,7 +1,11 @@
 # Estado
 
 La app funciona de punta a punta: grabar → pausar/reanudar → detener →
-transcribir → limpiar / reprocesar.
+transcribir → copiar / limpiar / reprocesar.
+
+La ventana es una franja al estilo del Winamp pequeño —contador, tres mandos y
+medidor de nivel en la misma línea— sin marco del sistema, y crece para
+desplegar el panel de texto sólo cuando hay algo que enseñar.
 
 ## Medido en este equipo (WSL2, CPU)
 
@@ -27,8 +31,9 @@ detiene. Última pasada, todo en verde:
 - Durante la pausa el contador y los trozos capturados quedan **congelados**
   (879 ms / 113 trozos en dos muestras separadas) y avanzan al reanudar.
 - El WAV resultante mide lo que debe: 53.804 bytes ≈ 1,68 s a 16 kHz mono.
-- La puerta de voz descarta el silencio antes de llamar al motor
-  (`voz=0.056`, por debajo del umbral 0,10) y la UI dice «no se oyó nada».
+- El medidor de nivel recibe barras reales del micrófono mientras graba.
+- La puerta de voz descarta el silencio antes de llamar al motor y la UI dice
+  «no se oyó nada».
 - Tras el ciclo, la fase vuelve a `inicial` y limpiar / reprocesar quedan
   habilitados según corresponda.
 
@@ -46,3 +51,6 @@ for you, ask what you can do for your country.» (5,6 s).
 - El idioma está fijado en `auto` (`LANGUAGE` en `src/main/engine.js`). Si sólo
   se dicta en español, ponerlo en `'es'` es más rápido y más fiable en clips
   cortos.
+- La ventana usa `transparent: true` para las esquinas redondeadas. Funciona en
+  WSLg; en un escritorio sin compositor podría verse un recuadro negro en las
+  esquinas, y entonces habría que desactivarlo.

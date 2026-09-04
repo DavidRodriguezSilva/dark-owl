@@ -1,7 +1,7 @@
 'use strict';
 
 const path = require('node:path');
-const { app, BrowserWindow, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, clipboard, ipcMain, shell } = require('electron');
 const engine = require('./engine');
 const text = require('./text');
 
@@ -10,16 +10,23 @@ if (process.platform === 'linux') {
   app.commandLine.appendSwitch('disable-gpu-sandbox');
 }
 
+const ANCHO = 420;
+const ALTO_PLEGADO = 96; // barra de título + fila de mandos
+const ALTO_DESPLEGADO = 376;
+
 let win = null;
 
 function createWindow() {
   win = new BrowserWindow({
-    width: 340,
-    height: 460,
-    minWidth: 300,
-    minHeight: 380,
+    width: ANCHO,
+    height: ALTO_PLEGADO,
     title: 'Whisper App',
-    backgroundColor: '#12131a',
+    // Sin marco del sistema: la barra de título la pinta el renderer, que es
+    // lo que permite las esquinas redondeadas y el aspecto compacto.
+    frame: false,
+    transparent: true,
+    backgroundColor: '#00000000',
+    resizable: false,
     show: false,
     autoHideMenuBar: true,
     webPreferences: {
@@ -41,6 +48,20 @@ function createWindow() {
 }
 
 ipcMain.handle('engine:status', () => engine.status());
+
+ipcMain.handle('copiar', (_event, texto) => {
+  clipboard.writeText(String(texto || ''));
+});
+
+// La ventana crece sólo cuando hay texto que enseñar.
+ipcMain.on('ui:desplegar', (_event, desplegado) => {
+  if (win && !win.isDestroyed()) {
+    win.setContentSize(ANCHO, desplegado ? ALTO_DESPLEGADO : ALTO_PLEGADO, true);
+  }
+});
+
+ipcMain.on('ui:minimizar', () => win && win.minimize());
+ipcMain.on('ui:cerrar', () => win && win.close());
 
 ipcMain.handle('transcribe', async (_event, wav) => {
   try {

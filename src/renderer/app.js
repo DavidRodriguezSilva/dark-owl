@@ -12,10 +12,12 @@ const el = (id) => document.getElementById(id);
 const dot = el('engine');
 const timer = el('timer');
 const salida = el('text');
+const panel = el('panel');
 const btn = {
   grabar: el('record'),
   pausar: el('pause'),
   detener: el('stop'),
+  copiar: el('copy'),
   reprocesar: el('reprocess'),
   limpiar: el('clear'),
 };
@@ -28,6 +30,7 @@ let fase = 'inicial';
 let engineListo = false;
 let ultimoWav = null; // se conserva para poder reprocesar
 let tick = 0;
+let cuadro = 0;
 
 function reloj(ms) {
   const s = Math.floor(ms / 1000);
@@ -46,15 +49,24 @@ function pintar() {
   btn.grabar.disabled = !engineListo || activo || ocupado;
   btn.pausar.disabled = !activo;
   btn.detener.disabled = !activo;
+  btn.copiar.disabled = !salida.value || ocupado;
   btn.reprocesar.disabled = !ultimoWav || activo || ocupado;
-  btn.limpiar.disabled = ocupado || (!salida.value && !ultimoWav);
+  btn.limpiar.disabled = ocupado;
 
-  btn.grabar.classList.toggle('is-live', grabando);
   timer.classList.toggle('timer--live', activo);
   document.body.classList.toggle('is-busy', ocupado);
 
   icono(btn.pausar, fase === 'pausado' ? 'i-play' : 'i-pause');
   btn.pausar.title = btn.pausar.ariaLabel = fase === 'pausado' ? 'Reanudar' : 'Pausar';
+
+  desplegar(Boolean(salida.value) || ocupado);
+}
+
+/** El panel de texto y la ventana crecen juntos: sin texto, sólo la fila. */
+function desplegar(si) {
+  if (panel.hidden === !si) return;
+  panel.hidden = !si;
+  window.api.ventana.desplegar(si);
 }
 
 function arrancarReloj() {
@@ -67,6 +79,14 @@ function arrancarReloj() {
 function pararReloj() {
   clearInterval(tick);
   tick = 0;
+}
+
+// El medidor se repinta siempre: en reposo deja una línea base, y así no hay que
+// arrancar y parar el bucle en cada transición.
+function animar() {
+  const estado = fase === 'grabando' || fase === 'pausado' ? fase : 'inicial';
+  Viz.pintar(estado === 'inicial' ? [] : Recorder.niveles, estado);
+  cuadro = requestAnimationFrame(animar);
 }
 
 async function transcribir(wav) {
@@ -133,15 +153,24 @@ btn.detener.addEventListener('click', async () => {
     pintar();
     return;
   }
+  // Se registra siempre, no sólo al descartar: es el dato con el que se ajusta
+  // VOZ_MINIMA si alguna vez filtra de más o de menos.
+  console.info(`nivel: voz=${captura.voz.toFixed(3)} rms=${captura.rms.toFixed(4)} pico=${captura.pico.toFixed(3)}`);
   if (captura.voz < VOZ_MINIMA) {
     fase = 'inicial';
     salida.value = '⚠ no se oyó nada';
-    console.info(`descartado: voz=${captura.voz.toFixed(3)} rms=${captura.rms.toFixed(4)}`);
     pintar();
     return;
   }
   ultimoWav = captura.wav;
   await transcribir(ultimoWav);
+});
+
+btn.copiar.addEventListener('click', async () => {
+  await window.api.copiar(salida.value);
+  // Confirmación sin texto: el icono se pone verde un instante.
+  btn.copiar.classList.add('hecho');
+  setTimeout(() => btn.copiar.classList.remove('hecho'), 900);
 });
 
 btn.reprocesar.addEventListener('click', () => {
@@ -154,6 +183,9 @@ btn.limpiar.addEventListener('click', () => {
   timer.textContent = '00:00';
   pintar();
 });
+
+el('min').addEventListener('click', () => window.api.ventana.minimizar());
+el('close').addEventListener('click', () => window.api.ventana.cerrar());
 
 function estadoEngine(s) {
   engineListo = s.ready;
@@ -174,5 +206,7 @@ function estadoEngine(s) {
   pintar();
 }
 
+Viz.montar(el('viz'));
+cuadro = requestAnimationFrame(animar);
 window.api.onEngineStatus(estadoEngine);
 window.api.engineStatus().then(estadoEngine);
