@@ -28,7 +28,27 @@ npm install -g pnpm
 En el instalador de Build Tools hay que marcar **«Desarrollo para el
 escritorio con C++»**. Sin eso CMake no encuentra compilador.
 
-Abre una **«Developer PowerShell for VS 2022»** para que MSVC esté en el PATH.
+> **Reabre la terminal después de instalar.** El `PATH` se captura cuando
+> arranca el proceso, así que una PowerShell que ya estuviera abierta no ve lo
+> que acabas de instalar. Es la causa número uno de que `pnpm run setup` diga
+> que falta CMake.
+
+Abre una **«Developer PowerShell for VS 2022»**: además del PATH de MSVC, trae
+el CMake que viene con Build Tools, así que sirve aunque no instales el de
+Kitware.
+
+Para comprobar qué ve la terminal:
+
+```powershell
+where.exe cmake
+where.exe git
+cl.exe          # debe responder con la versión del compilador de Microsoft
+```
+
+`pnpm run setup` imprime la ruta de cada herramienta que encuentra, y si falla
+te dice exactamente dónde ha buscado. Busca en el `PATH` y, si no, en las
+ubicaciones habituales: `C:\Program Files\CMake\bin`, los enlaces de winget y
+el CMake que trae Visual Studio.
 
 ## Construir
 
