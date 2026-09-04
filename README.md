@@ -106,14 +106,19 @@ la app funciona sin red.
 ## Verificar que sigue funcionando
 
 ```bash
-pnpm run smoke
+pnpm run smoke         # el ciclo completo, con la app abierta de verdad
+pnpm run smoke:motor   # el ciclo de vida de whisper-server
 ```
 
-Abre la app de verdad, graba del micrófono, pausa, reanuda y detiene, y
-comprueba lo que ninguna prueba unitaria ve: que el worklet carga bajo la CSP,
-que la pausa congela de verdad la captura y que el WAV llega al motor por IPC.
-Sin voz real de por medio, lo esperable es que la puerta de voz descarte la
-grabación — eso también es un ciclo completo.
+`smoke` abre la app, graba del micrófono, pausa, reanuda y detiene, y comprueba
+lo que ninguna prueba unitaria ve: que el worklet carga bajo la CSP, que la
+pausa congela de verdad la captura y que el WAV llega al motor por IPC. Sin voz
+real de por medio, lo esperable es que la puerta de voz descarte la grabación —
+eso también es un ciclo completo.
+
+`smoke:motor` comprueba que un `whisper-server` huérfano de una ejecución
+anterior se recoge al arrancar, y que no se mata un PID ajeno. Importa porque
+cada huérfano retiene el modelo entero en memoria.
 
 ## Arquitectura
 

@@ -45,10 +45,10 @@ for you, ask what you can do for your country.» (5,6 s).
 
 ## Pendiente
 
-- **Empaquetado**: AppImage en Linux y portable en Windows, con `vendor/` como
-  recurso extra. Sin probar todavía.
-- **Windows**: el código no asume APIs de una sola plataforma, pero no se ha
-  ejecutado allí.
+- **Empaquetado**: AppImage en Linux y ejecutable de Windows. Sin probar.
+  Ojo con Windows: `vendor/` contiene binarios ELF, así que un paquete
+  construido desde WSL arrancaría y fallaría al transcribir — hace falta
+  compilar whisper.cpp para Windows antes.
 - El idioma está fijado en `auto` (`LANGUAGE` en `src/main/engine.js`). Si sólo
   se dicta en español, ponerlo en `'es'` es más rápido y más fiable en clips
   cortos.

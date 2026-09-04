@@ -123,3 +123,13 @@ app.on('activate', () => {
 
 // Sin esto el proceso de whisper-server sobrevive a la app.
 app.on('before-quit', () => engine.stop());
+
+// Cerrando la ventana basta con before-quit, pero si a la app la matan a señal
+// —cerrar la terminal, un kill, el lanzador de WSLg— no se dispara y el motor
+// queda huérfano reteniendo el modelo en memoria.
+for (const senal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
+  process.on(senal, () => {
+    engine.stop();
+    app.quit();
+  });
+}
