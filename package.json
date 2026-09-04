@@ -14,6 +14,7 @@
     "start": "electron .",
     "setup": "node scripts/setup-whisper.js",
     "setup:cuda": "node scripts/setup-whisper.js --cuda",
+    "icono": "electron scripts/icono.js",
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
     "smoke": "electron scripts/smoke.js",
@@ -51,7 +52,8 @@
       "target": [
         "AppImage"
       ],
-      "category": "AudioVideo"
+      "category": "AudioVideo",
+      "icon": "assets/icon.png"
     },
     "win": {
       "target": [
@@ -62,7 +64,8 @@
           ]
         }
       ],
-      "artifactName": "${productName}-Setup-${version}.${ext}"
+      "artifactName": "${productName}-Setup-${version}.${ext}",
+      "icon": "assets/icon.ico"
     },
     "nsis": {
       "oneClick": false,
