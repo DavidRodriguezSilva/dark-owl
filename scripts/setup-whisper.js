@@ -47,10 +47,68 @@ function run(cmd, args, cwd = ROOT) {
   if (r.status !== 0) throw new Error(`${cmd} falló con código ${r.status}`);
 }
 
-function has(cmd) {
-  const probe = spawnSync(IS_WIN ? 'where' : 'which', [cmd], { stdio: 'ignore' });
-  return probe.status === 0;
+/**
+ * Sitios donde buscar una herramienta si no está en el PATH. En Windows es lo
+ * habitual: winget instala CMake pero la sesión de terminal ya abierta captura
+ * el PATH al arrancar, así que no lo ve hasta reabrirla. Y VS Build Tools trae
+ * su propio cmake, visible sólo dentro de una Developer PowerShell.
+ */
+function candidatos(cmd) {
+  if (!IS_WIN) return [];
+  const pf = process.env.ProgramFiles || 'C:\\Program Files';
+  const pf86 = process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)';
+  const local = process.env.LOCALAPPDATA || '';
+
+  if (cmd === 'cmake') {
+    const deVisualStudio = [];
+    for (const raiz of [pf, pf86]) {
+      for (const anio of ['2022', '2019']) {
+        for (const edicion of ['BuildTools', 'Community', 'Professional', 'Enterprise']) {
+          deVisualStudio.push(
+            path.join(raiz, 'Microsoft Visual Studio', anio, edicion,
+              'Common7', 'IDE', 'CommonExtensions', 'Microsoft', 'CMake', 'CMake', 'bin', 'cmake.exe'),
+          );
+        }
+      }
+    }
+    return [
+      path.join(pf, 'CMake', 'bin', 'cmake.exe'),
+      path.join(pf86, 'CMake', 'bin', 'cmake.exe'),
+      local && path.join(local, 'Microsoft', 'WinGet', 'Links', 'cmake.exe'),
+      ...deVisualStudio,
+    ].filter(Boolean);
+  }
+
+  if (cmd === 'git') {
+    return [
+      path.join(pf, 'Git', 'cmd', 'git.exe'),
+      path.join(pf86, 'Git', 'cmd', 'git.exe'),
+      local && path.join(local, 'Microsoft', 'WinGet', 'Links', 'git.exe'),
+    ].filter(Boolean);
+  }
+
+  return [];
 }
+
+/** Ruta absoluta de una herramienta, o null. Primero el PATH, luego los sitios conocidos. */
+function resolver(cmd) {
+  const busca = spawnSync(IS_WIN ? 'where' : 'which', [cmd], { encoding: 'utf8' });
+  if (busca.status === 0) {
+    const primera = String(busca.stdout || '')
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .find(Boolean);
+    if (primera) return primera;
+  }
+  return candidatos(cmd).find((ruta) => fs.existsSync(ruta)) || null;
+}
+
+function has(cmd) {
+  return resolver(cmd) !== null;
+}
+
+// Rutas absolutas de las herramientas, resueltas una vez al arrancar.
+const herramienta = {};
 
 /** Descarga siguiendo redirects, a un .part que se renombra al terminar. */
 function download(url, dest) {
@@ -97,13 +155,32 @@ function download(url, dest) {
 }
 
 function checkPrereqs() {
-  const missing = ['git', 'cmake'].filter((c) => !has(c));
-  if (missing.length) {
-    console.error(`\nFaltan herramientas: ${missing.join(', ')}`);
-    console.error('  Debian/Ubuntu: sudo apt install -y git cmake build-essential');
-    console.error('  Windows:       winget install Kitware.CMake Git.Git\n');
-    process.exit(1);
+  const faltan = [];
+  for (const cmd of ['git', 'cmake']) {
+    const ruta = resolver(cmd);
+    if (ruta) {
+      herramienta[cmd] = ruta;
+      log(`${cmd}: ${ruta}`);
+    } else {
+      faltan.push(cmd);
+    }
   }
+  if (!faltan.length) return;
+
+  console.error(`\nNo encuentro: ${faltan.join(', ')}`);
+  console.error('\nBuscado en el PATH y en:');
+  for (const cmd of faltan) {
+    for (const ruta of candidatos(cmd)) console.error(`  ${ruta}`);
+  }
+  if (IS_WIN) {
+    console.error('\n  winget install Kitware.CMake Git.Git');
+    console.error('  Y REABRE la terminal: el PATH se captura al arrancarla,');
+    console.error('  así que una sesión ya abierta no ve lo recién instalado.');
+  } else {
+    console.error('\n  sudo apt install -y git cmake build-essential');
+  }
+  console.error('');
+  process.exit(1);
 }
 
 function fetchSource() {
@@ -112,7 +189,7 @@ function fetchSource() {
     return;
   }
   log(`clonando whisper.cpp en ${SRC}`);
-  run('git', ['clone', '--depth', '1', REPO, SRC], path.dirname(SRC));
+  run(herramienta.git, ['clone', '--depth', '1', REPO, SRC], path.dirname(SRC));
 }
 
 function build() {
@@ -132,9 +209,9 @@ function build() {
   ];
   if (CUDA) cfg.push('-DGGML_CUDA=ON');
 
-  run('cmake', cfg, SRC);
-  run('cmake', ['--build', buildDir, '--config', 'Release', '-j', String(os.cpus().length)], SRC);
-  run('cmake', ['--install', buildDir, '--config', 'Release'], SRC);
+  run(herramienta.cmake, cfg, SRC);
+  run(herramienta.cmake, ['--build', buildDir, '--config', 'Release', '-j', String(os.cpus().length)], SRC);
+  run(herramienta.cmake, ['--install', buildDir, '--config', 'Release'], SRC);
 
   if (!fs.existsSync(path.join(BIN, `whisper-cli${EXE}`))) {
     throw new Error(`cmake --install no dejó whisper-cli en ${BIN}`);
