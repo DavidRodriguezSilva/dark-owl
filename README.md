@@ -183,6 +183,10 @@ pnpm run dist      # AppImage en Linux
 El paquete lleva dentro el motor y el modelo, así que pesa unos 780 MB y
 funciona sin red desde el primer arranque.
 
+Los iconos (`assets/icon.png` y `assets/icon.ico` con siete medidas) están
+versionados. Para rehacerlos tras un cambio de diseño: `pnpm run icono`, que los
+pinta como HTML y los captura, sin librerías de imagen.
+
 Para el ejecutable de Windows hay que construir **en Windows**: aquí `vendor/`
 contiene binarios ELF y un paquete armado desde WSL arrancaría y fallaría al
 transcribir. Los pasos están en [`docs/windows.md`](docs/windows.md), incluido

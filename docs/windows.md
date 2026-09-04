@@ -65,6 +65,11 @@ Con GPU NVIDIA, y sólo si tienes el CUDA Toolkit instalado:
 pnpm run setup:cuda
 ```
 
+El icono va incluido: `assets/icon.ico` está versionado, con las siete medidas
+que Windows pide (16 a 256). Si alguna vez cambia el diseño, se regenera con
+`pnpm run icono`, que lo pinta como HTML y lo captura — sin librerías de imagen
+ni herramientas de diseño.
+
 El instalador pesa unos **700 MB**: lleva el modelo `small` dentro para que la
 app funcione sin red desde el primer arranque. Es un instalador NSIS y no un
 portable a propósito — un portable se re-extraería en el directorio temporal en
