@@ -13,8 +13,8 @@ context: |
 
   Fuera de alcance por ahora: hotkeys globales, inyección de texto en otras apps,
   historial de notas, importar archivos de audio, grabación de audio del sistema,
-  resúmenes con LLM, traducción. Si algo de eso se propone, debe justificarse
-  contra "súper pequeña, súper minimalista".
+  resúmenes con LLM, traducción, i18n. Si algo de eso se propone, debe
+  justificarse contra "súper pequeña, súper minimalista".
 
   ## Por qué compilamos desde fuente
   Los releases de whisper.cpp y de apps Electron similares (p. ej. WhisperPress)
@@ -29,17 +29,45 @@ context: |
     superficie que `src/preload/preload.js` expone en `window.api`.
   - whisper.cpp compilado desde fuente vía CMake. Modelo por defecto: **small**
     (`ggml-small.bin`). CUDA opcional (`npm run setup:cuda`).
-  - Captura de audio con WebAudio en el renderer a **16 kHz mono**, codificado a
-    WAV PCM 16-bit — el formato que whisper.cpp espera sin conversión previa.
   - Cross-platform Linux + Windows. Se desarrolla y prueba en Linux/WSL2 (WSLg,
     micrófono vía PulseAudio); Windows no se puede probar desde el entorno de
     desarrollo, así que el código no asume APIs de una sola plataforma.
+
+  ## Decisiones técnicas ya tomadas
+  Salen de leer WhisperPress; el detalle y el porqué están en
+  `docs/referencia-whisperpress.md`. No re-litigar sin motivo nuevo.
+
+  - **Captura**: `AudioContext({ sampleRate: 16000 })` + `AudioWorklet` que
+    postea `Float32Array`. Nada de `MediaRecorder`, nada de ffmpeg.
+  - **Codificación**: WAV escrito a mano — cabecera RIFF de 44 bytes + PCM
+    `Int16` LE mono a 16 kHz. Es el formato que whisper.cpp consume directo.
+  - **Al detener**: esperar ~140 ms antes de cerrar el `AudioContext`, o se
+    pierden los últimos mensajes del worklet (y las últimas sílabas). Después,
+    parar las pistas del stream *y* cerrar el contexto.
+  - **Pausa**: bandera que deja de acumular chunks, sin cerrar el contexto —
+    reanudar es instantáneo y no vuelve a pedir permiso de micrófono.
+  - **Motor**: `whisper-server` levantado al abrir la app y mantenido caliente;
+    se transcribe con `POST /inference` (`FormData` + `response_format=verbose_json`).
+    Con clips cortos el tiempo de carga del modelo domina, así que recargarlo por
+    transcripción (`whisper-cli`) no es opción.
+  - **Arranque del servidor**: puerto libre vía `net.createServer().listen(0)`;
+    el socket sólo abre tras cargar el modelo, así que se sondea con `fetch`
+    cada 300 ms hasta que responda.
+  - **Flags obligatorias**: `whisper-server` decodifica *greedy* por defecto y
+    pierde calidad frente al CLI. Pasar siempre `-bs 5 -bo 5`.
+  - **Hilos**: `max(2, min(8, cpus/2))`.
+  - **Post-proceso**: quitar marcadores de no-habla (`[BLANK_AUDIO]`, `(music)`,
+    `♪`) y unir los saltos de línea por segmento en texto corrido. Descartar
+    audios de menos de ~350 ms sin llamar al motor.
+  - **Descargas**: escribir a `<dest>.part` y renombrar al terminar, para que una
+    descarga cortada no deje un modelo corrupto que parece válido.
 
   ## Layout
     src/main/       proceso principal: ventana, IPC, engine, rutas
     src/preload/    puente contextBridge, única superficie del renderer
     src/renderer/   UI: index.html, app.css, app.js
     scripts/        setup-whisper.js — compila engine + descarga modelo
+    docs/           notas de diseño y referencia
     vendor/         engine y modelos locales (git-ignored, nunca versionar)
 
   ## Convenciones
@@ -50,14 +78,19 @@ context: |
   - Nada de dependencias en runtime salvo que haya una razón fuerte; hoy el
     árbol de producción es cero-dependencias.
   - Ninguna llamada de red en runtime. La red sólo se toca en `npm run setup`.
+    Excepción: `127.0.0.1` contra nuestro propio `whisper-server`.
 
 rules:
   proposal:
     - Cada propuesta debe justificarse contra el alcance minimalista; si añade
       superficie de UI, decir explícitamente qué se saca o por qué cabe.
     - Incluir siempre una sección "Fuera de alcance".
+    - Si algo ya está resuelto en "Decisiones técnicas ya tomadas", referenciarlo
+      en vez de volver a decidirlo.
   design:
     - Indicar qué corre en main y qué en renderer, y qué canal IPC los une.
+    - Toda API nueva expuesta al renderer se lista explícitamente, con su forma.
+    - Señalar si introduce una dependencia en runtime y por qué no se puede evitar.
   tasks:
     - Trocear en tareas de máximo 2 horas.
     - La última tarea de cada cambio es verificarlo con la app corriendo
@@ -68,6 +101,8 @@ operations:
     guidance:
       - Verificar sintaxis con `node --check` en los archivos JS tocados.
       - No versionar nada bajo `vendor/`.
+      - Al tocar audio, probar el ciclo completo con voz real: el silencio y los
+        clips de menos de un segundo son los que rompen.
   archive:
     guidance:
       - Resumir en una línea qué quedó fuera de alcance y por qué.

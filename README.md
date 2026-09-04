@@ -80,10 +80,20 @@ vendor/         engine compilado + modelos (nunca versionado)
   renderer sólo accede a lo que `preload.js` expone en `window.api`.
 - HTML + CSS + JS plano. Sin framework de UI, sin bundler, sin TypeScript.
 - Cero dependencias en runtime.
-- El audio se captura con **WebAudio a 16 kHz mono** y se codifica a WAV PCM
-  16-bit — el formato que whisper.cpp consume sin conversión previa (por eso no
-  hace falta ffmpeg).
-- La transcripción corre en el proceso main invocando `whisper-cli`.
+- El audio se captura con **WebAudio a 16 kHz mono** (`AudioContext` +
+  `AudioWorklet`, sin `MediaRecorder`) y se codifica a WAV PCM 16-bit escribiendo
+  la cabecera RIFF a mano — es el formato que whisper.cpp consume sin conversión
+  previa, así que **no hace falta ffmpeg**.
+- La transcripción corre en el proceso main contra un **`whisper-server` que se
+  mantiene caliente**: el modelo queda cargado en RAM y "detener → texto" es casi
+  inmediato. Con clips cortos, recargar el modelo en cada transcripción costaría
+  más que transcribir.
+
+Las decisiones de fondo — y las trampas que ya conocemos, como que
+`whisper-server` decodifica *greedy* por defecto y hay que forzarle `-bs 5 -bo 5`
+— están documentadas en
+[`docs/referencia-whisperpress.md`](docs/referencia-whisperpress.md), las notas
+de lectura del repo que usamos de guía.
 
 ## Modelo
 
