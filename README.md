@@ -26,8 +26,9 @@ Lo único que se versiona en este repo es código legible.
 
 ## Alcance
 
-**Sí:** grabar, pausar, detener, transcribir, ver el texto, copiarlo, limpiar,
-reprocesar el último audio.
+**Sí:** grabar, pausar, detener, transcribir, ver el texto, limpiar,
+reprocesar el último audio. Controles sólo con iconos; el nombre de la app vive
+en la barra de título de la ventana, no dentro de la UI.
 
 **No** (al menos por ahora): hotkeys globales, inyección de texto en otras
 apps, historial de notas, importar archivos de audio, capturar audio del
