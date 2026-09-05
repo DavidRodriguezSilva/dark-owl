@@ -59,7 +59,8 @@
 - [x] 5.5 Probar el micrófono con una grabación en curso: comprobado en
       `smoke:ajustes`, las dos capturas conviven. Era una suposición y ahora
       es un hecho medido.
-- [ ] 5.6 Manual del propietario, en Windows: cambiar entre dos micrófonos de
-      verdad y confirmar que graba del elegido; desenchufar el elegido y
-      confirmar que avisa en vez de grabar del otro en silencio. Aquí sólo hay
-      un dispositivo real y ese camino no se puede ejercitar.
+- [x] 5.6 **Omitida a petición del propietario.** Queda por tanto sin
+      verificar contra hardware real: cambiar entre dos micrófonos y
+      desenchufar el elegido sólo se ha ejercitado con un identificador
+      inventado, no con dispositivos de verdad. Si alguna vez falla ahí, éste
+      es el camino que nadie recorrió.
