@@ -48,8 +48,15 @@ ipcMain.on('ui:minimizar', () => {});
 ipcMain.on('ui:cerrar', () => {});
 ipcMain.handle('transcribe', async (_e, wav) => {
   try {
-    const r = await engine.transcribe(Buffer.from(wav));
-    return { text: text.limpiar(r.text), language: r.language };
+    const config = ajustes.leer();
+    const r = await engine.transcribe(Buffer.from(wav), { idioma: config.idioma });
+    return {
+      text: text.formatear(r.text, r.palabras, {
+        formato: config.formato,
+        pausaParrafo: config.pausaParrafo,
+      }),
+      language: r.language,
+    };
   } catch (err) {
     return { error: String(err.message || err) };
   }

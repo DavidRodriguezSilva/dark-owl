@@ -73,6 +73,34 @@
           <canvas id="nivel" class="viz viz--prueba" width="1" height="1"></canvas>
         </div>
 
+        <div class="opcion">
+          <span class="opcion__nombre">Idioma</span>
+          <select id="idioma" class="sel" aria-label="Idioma de transcripción">
+            <option value="es">Español</option>
+            <option value="en">Inglés</option>
+            <option value="pt">Portugués</option>
+            <option value="fr">Francés</option>
+            <option value="de">Alemán</option>
+            <option value="it">Italiano</option>
+            <option value="auto">Detectar</option>
+          </select>
+        </div>
+
+        <div class="opcion">
+          <span class="opcion__nombre">Formato</span>
+          <div id="formato" class="iconos iconos--texto" role="group" aria-label="Formato del texto">
+            <button type="button" data-valor="corrido" title="Texto corrido" aria-pressed="false">Corrido</button>
+            <button type="button" data-valor="frases" title="Una frase por línea" aria-pressed="false">Frases</button>
+            <button type="button" data-valor="parrafos" title="Párrafos por pausa" aria-pressed="false">Párrafos</button>
+          </div>
+        </div>
+
+        <div class="opcion" id="filaPausa">
+          <span class="opcion__nombre">Pausa</span>
+          <input id="pausa" class="rango" type="range" min="200" max="3000" step="50" aria-label="Umbral de pausa para separar párrafos" />
+          <output id="pausaVal" class="rango__val">600 ms</output>
+        </div>
+
         <p id="micNota" class="aviso" hidden></p>
       </section>
 

@@ -101,8 +101,21 @@ re-litigar sin motivo nuevo.**
   whisper.cpp v1.9.3). Cambiarlos **no exige reiniciar el motor** ni recargar el
   modelo — es lo que hace baratos los ajustes de transcripción.
 - **Post-proceso**: quitar marcadores de no-habla (`[BLANK_AUDIO]`, `(music)`,
-  `♪`) y unir los saltos de línea por segmento. Descartar audios de menos de
-  ~350 ms sin llamar al motor.
+  `♪`) y recomponer el texto **desde las palabras con tiempos**, nunca uniendo
+  las líneas de `json.text`: whisper corta segmentos a mitad de palabra y unir
+  esas líneas con un espacio parte la palabra («me encant ó»). Descartar audios
+  de menos de ~350 ms sin llamar al motor.
+- **Los `words` de whisper son sub-palabras**, no palabras, y traen su propio
+  espacio inicial: `" Puedes"` llega como `" P"`, `"ued"`, `"es"`. Se
+  concatenan tal cual; recortar ese espacio e inventar separaciones produce
+  «P ued es».
+- **Frases y párrafos**: la frase se corta por puntuación final; el párrafo
+  exige **puntuación final Y pausa**. Los límites de segmento no sirven para
+  ninguna de las dos cosas — se midió que el fin de un segmento es exactamente
+  el principio del siguiente, y que corta a mitad de frase. Umbral por defecto
+  600 ms, medido contra seis minutos de español real: los huecos normales entre
+  palabras no pasan de 0,4 s y las pausas de verdad superan 1 s, con la banda
+  intermedia vacía. Es ajustable, y si se recalibra hay que repetir la medición.
 - **Descargas**: escribir a `<dest>.part` y renombrar al terminar, para que una
   descarga cortada no deje un modelo corrupto que parece válido.
 - **Puerta de voz** (nuestra, WhisperPress no la tiene): whisper no se calla
@@ -188,6 +201,7 @@ Dos smokes con la app real, porque hay cosas que ninguna prueba unitaria ve:
 - `pnpm run prueba:ajustes` — lógica del fichero de preferencias, en Node sin
   Electron por medio.
 - `pnpm run prueba:microfono` — la resolución del dispositivo, en Node.
+- `pnpm run prueba:texto` — el formato del transcrito, en Node.
 - `pnpm run smoke:ajustes` — con el proceso main real: que el engranaje abre
   una sola ventana, que el ajuste llega al disco y que el cambio de tema
   alcanza a la otra ventana y al medidor.

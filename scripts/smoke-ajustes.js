@@ -19,6 +19,7 @@ const { app, BrowserWindow } = require('electron');
 const ROOT = path.resolve(__dirname, '..');
 // El main real: crea la ventana, registra los IPC y arranca el engine.
 require(path.join(ROOT, 'src/main/main.js'));
+const engine = require(path.join(ROOT, 'src/main/engine.js'));
 
 const espera = (ms) => new Promise((r) => setTimeout(r, ms));
 let fallos = 0;
@@ -137,6 +138,43 @@ app.whenReady().then(async () => {
     await jsA(`document.getElementById('probar').click()`);
     await espera(600);
     comprobar('pulsar de nuevo cierra el micrófono de la prueba', !(await jsA(`Recorder.activo`)));
+
+    // --- transcripción ---
+    const pidAntes = engine.proc && engine.proc.pid;
+    comprobar('el motor está vivo antes de tocar el idioma', Boolean(pidAntes));
+
+    await jsA(`(() => { const s = document.getElementById('idioma'); s.value = 'en'; s.dispatchEvent(new Event('change')); })()`);
+    await espera(900);
+    comprobar(
+      'cambiar de idioma no reinicia el motor',
+      engine.proc && engine.proc.pid === pidAntes && engine.state === 'ready',
+      `pid ${pidAntes} → ${engine.proc && engine.proc.pid}`,
+    );
+    comprobar(
+      'el idioma se guarda en disco',
+      JSON.parse(fs.readFileSync(ruta, 'utf8')).idioma === 'en',
+    );
+
+    await jsA(`document.querySelector('#formato [data-valor="corrido"]').click()`);
+    await espera(700);
+    comprobar(
+      'el umbral se apaga sin formato de párrafos',
+      await jsA(`document.getElementById('pausa').disabled`),
+    );
+
+    await jsA(`document.querySelector('#formato [data-valor="parrafos"]').click()`);
+    await espera(700);
+    comprobar(
+      'y se enciende al volver a párrafos',
+      !(await jsA(`document.getElementById('pausa').disabled`)),
+    );
+
+    await jsA(`(() => { const r = document.getElementById('pausa'); r.value = '900'; r.dispatchEvent(new Event('change')); })()`);
+    await espera(700);
+    comprobar(
+      'el umbral de pausa se guarda',
+      JSON.parse(fs.readFileSync(ruta, 'utf8')).pausaParrafo === 900,
+    );
 
     ajustes.close();
     await espera(800);

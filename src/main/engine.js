@@ -9,10 +9,11 @@ const { EventEmitter } = require('node:events');
 const { app } = require('electron');
 const paths = require('./paths');
 
-// 'auto' detecta el idioma en cada clip. Con audios muy cortos la detección
-// puede fallar y whisper acaba traduciendo o alucinando; fijarlo a 'es' es más
-// fiable si sólo se dicta en español.
-const LANGUAGE = 'auto';
+// Idioma con el que arranca el servidor. Es sólo el valor de partida: cada
+// petición manda el suyo, que sale del ajuste del usuario y por defecto es
+// concreto — con audios muy cortos la detección automática falla y whisper
+// acaba traduciendo o alucinando.
+const LANGUAGE_INICIAL = 'auto';
 
 // Arrancar el servidor puede tardar lo que tarde en cargar el modelo desde disco.
 const START_TIMEOUT_MS = 120000;
@@ -139,7 +140,7 @@ class Engine extends EventEmitter {
       '--host', '127.0.0.1',
       '--port', String(this.port),
       '-t', String(this._threads()),
-      '-l', LANGUAGE,
+      '-l', LANGUAGE_INICIAL,
       // whisper-server decodifica greedy por defecto (-bs -1 -bo 2) y transcribe
       // peor que whisper-cli. Igualamos su beam search.
       '-bs', '5', '-bo', '5',
@@ -195,24 +196,45 @@ class Engine extends EventEmitter {
     if (this.state !== 'stopped') this._set('stopped');
   }
 
-  /** @param {Buffer|Uint8Array} wav WAV PCM 16 kHz mono. */
-  async transcribe(wav) {
+  /**
+   * @param {Buffer|Uint8Array} wav WAV PCM 16 kHz mono.
+   * @param {{idioma?: string}} [opciones]
+   */
+  async transcribe(wav, opciones = {}) {
     if (this.state !== 'ready' && !(await this.start())) {
       throw new Error('el engine no está listo');
     }
+
+    const idioma = opciones.idioma || LANGUAGE_INICIAL;
 
     const body = new FormData();
     body.append('file', new Blob([wav], { type: 'audio/wav' }), 'audio.wav');
     body.append('response_format', 'verbose_json');
     body.append('temperature', '0.0');
     body.append('temperature_inc', '0.2');
+    // Por petición: cambiar de idioma no reinicia el servidor ni recarga el
+    // modelo. Con uno concreto se ahorra además la detección, que el propio
+    // servidor marca como cara y que en ese caso no usa nadie.
+    body.append('language', idioma === 'auto' ? 'auto' : idioma);
+    if (idioma !== 'auto') body.append('no_language_probabilities', 'true');
 
     const res = await fetch(`http://127.0.0.1:${this.port}/inference`, { method: 'POST', body });
     if (!res.ok) throw new Error(`inferencia HTTP ${res.status}`);
 
     const json = await res.json();
     if (json.error) throw new Error(String(json.error));
-    return { text: String(json.text || ''), language: json.language || LANGUAGE };
+
+    // Las palabras con sus tiempos son lo que permite saber dónde hubo una
+    // pausa de verdad: los límites de segmento no lo son —se midió que el fin
+    // de un segmento es exactamente el principio del siguiente—.
+    const palabras = [];
+    for (const seg of json.segments || []) {
+      for (const w of seg.words || []) {
+        palabras.push({ palabra: String(w.word || ''), inicio: Number(w.start), fin: Number(w.end) });
+      }
+    }
+
+    return { text: String(json.text || ''), language: json.language || idioma, palabras };
   }
 }
 
