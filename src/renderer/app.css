@@ -1,17 +1,38 @@
+/* Cada color se declara una sola vez con light-dark(claro, oscuro), y el tema se
+   elige cambiando `color-scheme`. Así el primer pintado ya sale en el esquema
+   correcto —el CSS resuelve antes de que corra ningún JS— y no hay destello al
+   arrancar en tema claro. Sin data-tema se sigue al sistema, que es el ajuste
+   por defecto.
+
+   Los acentos claros se oscurecen: sobre fondo claro, los del esquema oscuro se
+   quedan sin contraste — el verde y el ámbar no llegaban ni a 2:1. */
 :root {
-  --bg: #0d0e13;
-  --barra: #161923;
-  --panel: #1c1f2a;
-  --tecla: #2b3040;
-  --tecla-alta: #3b4256;
-  --linea: #333949;
-  --texto: #f2f4f9;
-  --tenue: #939ab0;
-  --rec: #f0483c;
-  --rec-alta: #ff5a4d;
-  --ok: #35d391;
-  --espera: #f0b429;
+  color-scheme: light dark;
+
+  --bg: light-dark(#f4f5f8, #0d0e13);
+  --barra: light-dark(#e7e9ef, #161923);
+  --panel: light-dark(#fff, #1c1f2a);
+  --tecla: light-dark(#dfe2ea, #2b3040);
+  --tecla-alta: light-dark(#cdd2de, #3b4256);
+  --linea: light-dark(#cfd4e0, #333949);
+  --texto: light-dark(#1a1d26, #f2f4f9);
+  --tenue: light-dark(#5d6478, #939ab0);
+  --rec: light-dark(#d13729, #f0483c);
+  --rec-alta: light-dark(#e8463a, #ff5a4d);
+  --ok: light-dark(#0f8a55, #35d391);
+  --espera: light-dark(#a97400, #f0b429);
+  --sobre-rec: #fff;
+  --viz-pausa: light-dark(#9aa2b8, #5c6480);
+  --viz-base: light-dark(#c3c9d6, #3b4256);
 }
+
+:root[data-tema='claro'] {
+  color-scheme: light;
+}
+:root[data-tema='oscuro'] {
+  color-scheme: dark;
+}
+
 
 * {
   box-sizing: border-box;
@@ -102,7 +123,7 @@ body {
 }
 .wbtn--x:hover {
   background: var(--rec);
-  color: #fff;
+  color: var(--sobre-rec);
 }
 
 /* ---- fila de mandos: todo en una línea ---- */
@@ -163,18 +184,29 @@ body {
 
 .key--rec {
   background: var(--rec);
-  color: #fff;
+  color: var(--sobre-rec);
 }
 .key--rec:hover:not(:disabled) {
   background: var(--rec-alta);
 }
 
-/* Medidor de nivel: ocupa lo que sobra de la línea. */
+/* Medidor de nivel: ocupa lo que sobra de la línea.
+
+   El canvas no recibe cascada, así que su color se declara aquí y viz.js lee el
+   valor ya resuelto con getComputedStyle. De este modo los colores del medidor
+   viven en la hoja de estilos como los demás, y siguen al tema sin que el código
+   de dibujo sepa nada de esquemas. */
 .viz {
   flex: 1;
   min-width: 0;
   height: 26px;
-  margin-left: 2px;
+  color: var(--viz-base);
+}
+.viz[data-estado='grabando'] {
+  color: var(--rec);
+}
+.viz[data-estado='pausado'] {
+  color: var(--viz-pausa);
 }
 
 /* ---- panel de texto, se despliega sólo si hay algo ---- */
@@ -305,4 +337,90 @@ textarea::-webkit-scrollbar-thumb:hover {
   width: 14px;
   height: 14px;
   cursor: nwse-resize;
+}
+
+/* El engranaje es secundario frente a los tres mandos de transporte: no compite
+   con ellos hasta que se le pasa por encima. */
+.key--sec {
+  background: transparent;
+  color: var(--tenue);
+}
+.key--sec:hover {
+  background: var(--tecla);
+  color: var(--texto);
+}
+
+/* ---- ventana de ajustes ---- */
+
+.ajustes {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 0;
+  padding: 16px 18px 18px;
+  overflow-y: auto;
+}
+
+.grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.grupo__titulo {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--tenue);
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.campo__nota {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--tenue);
+}
+
+/* Segmentado: tres opciones excluyentes en una fila, sin desplegable. Con tres
+   valores, un <select> escondería dos de ellos por nada. */
+.seg {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  background: var(--panel);
+  border: 1px solid var(--linea);
+  border-radius: 10px;
+}
+
+.seg button {
+  flex: 1;
+  padding: 7px 4px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--tenue);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.seg button:hover:not([aria-pressed='true']) {
+  background: var(--tecla);
+  color: var(--texto);
+}
+.seg button[aria-pressed='true'] {
+  background: var(--tecla-alta);
+  color: var(--texto);
+}
+.seg button:focus-visible {
+  outline: 2px solid var(--tenue);
+  outline-offset: 1px;
 }

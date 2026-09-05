@@ -73,7 +73,7 @@ los tres mandos y el medidor de nivel, todo en la misma línea.
 
 ```
 ● DARK OWL                                         –  ✕
- 00:00   ( ● ) ( ⏸ ) ( ■ )   ▁▃▅▂▆▃▁▅▂▄▇▃▁▅▂
+ 00:00  ▁▃▅▂▆▃▁▅▂▄▇▃▁▅▂   ( ● ) ( ⏸ ) ( ■ )  ( ⚙ )
 ```
 
 | | |
@@ -81,6 +81,7 @@ los tres mandos y el medidor de nivel, todo en la misma línea.
 | ● | grabar |
 | ⏸ / ▶ | pausar y reanudar (sin cerrar el micrófono: reanudar es instantáneo) |
 | ■ | detener → transcribe |
+| ⚙ | ajustes, en su propia ventana |
 
 El medidor no es decorativo: son los niveles reales del micrófono, agrupados a
 70 ms. Mientras grabas se mueve en rojo; en pausa se congela en gris.
@@ -88,6 +89,11 @@ El medidor no es decorativo: son los niveles reales del micrófono, agrupados a
 Al llegar el texto, la ventana **crece** y despliega el panel con tres
 herramientas — copiar, reprocesar el último audio sin volver a grabar, y
 limpiar. Al limpiar vuelve a plegarse a la franja.
+
+Los ajustes viven en su **propia ventana**, no dentro de la tira: van a crecer
+—micrófono, transcripción, glosario— y la tira no. Abrirlos no toca la ventana
+principal, así que se puede seguir grabando con ellos abiertos. Hoy llevan el
+esquema de color: claro, oscuro o seguir al del sistema, que es lo de serie.
 
 Se redimensiona arrastrando el borde derecho, el inferior o la esquina.
 Plegada sólo se ensancha —no tendría sentido alargar una franja vacía—; con el
@@ -110,8 +116,10 @@ la app funciona sin red.
 ## Verificar que sigue funcionando
 
 ```bash
-pnpm run smoke         # el ciclo completo, con la app abierta de verdad
-pnpm run smoke:motor   # el ciclo de vida de whisper-server
+pnpm run prueba:ajustes  # lógica del fichero de preferencias, en Node
+pnpm run smoke           # el ciclo completo, con la app abierta de verdad
+pnpm run smoke:motor     # el ciclo de vida de whisper-server
+pnpm run smoke:ajustes   # ventana de ajustes, persistencia y tema
 ```
 
 `smoke` abre la app, graba del micrófono, pausa, reanuda y detiene, y comprueba
@@ -124,6 +132,11 @@ eso también es un ciclo completo.
 anterior se recoge al arrancar, y que no se mata un PID ajeno. Importa porque
 cada huérfano retiene el modelo entero en memoria.
 
+`smoke:ajustes` levanta el proceso main de verdad y comprueba lo que las
+pruebas en Node no ven: que el engranaje abre una sola ventana, que el ajuste
+llega al disco, y que el cambio de tema alcanza a la otra ventana y al medidor
+—que pinta en canvas y no recibe cascada—.
+
 ## Arquitectura
 
 ```
@@ -131,8 +144,10 @@ src/main/main.js       ventana y manejadores IPC
 src/main/engine.js     ciclo de vida de whisper-server y POST /inference
 src/main/text.js       limpieza del transcrito
 src/main/paths.js      rutas de engine y modelo, en desarrollo y empaquetado
+src/main/ajustes.js    fichero de preferencias: defectos, validación y guardado
 src/preload/           puente contextBridge; única superficie visible del renderer
 src/renderer/          UI, captura de audio, worklet PCM y medidor de nivel
+src/renderer/ajustes.html  ventana de ajustes, aparte de la tira
 scripts/               setup-whisper.js — compila el engine y baja el modelo
 vendor/                engine compilado + modelos (nunca versionado)
 ```

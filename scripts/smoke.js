@@ -19,6 +19,7 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const ROOT = path.resolve(__dirname, '..');
 const engine = require(path.join(ROOT, 'src/main/engine.js'));
 const text = require(path.join(ROOT, 'src/main/text.js'));
+const ajustes = require(path.join(ROOT, 'src/main/ajustes.js'));
 
 if (process.platform === 'linux') app.commandLine.appendSwitch('disable-gpu-sandbox');
 
@@ -32,6 +33,15 @@ function comprobar(nombre, ok, detalle) {
 
 ipcMain.handle('engine:status', () => engine.status());
 ipcMain.handle('copiar', () => {});
+
+// Los ajustes usan el módulo de verdad, no un doble: así el arranque de la UI
+// recorre el mismo camino que en la app.
+ipcMain.handle('ajustes:leer', () => ({ ...ajustes.leer(), efectivo: 'oscuro' }));
+ipcMain.handle('ajustes:guardar', (_e, parche) => ({ ...ajustes.guardar(parche), efectivo: 'oscuro' }));
+
+// La ventana de ajustes no se abre en la prueba; sólo se anota que se pidió.
+let pidioAjustes = false;
+ipcMain.on('ui:ajustes', () => { pidioAjustes = true; });
 // La ventana de la prueba es de tamaño fijo: los avisos de la UI se ignoran.
 ipcMain.on('ui:desplegar', () => {});
 ipcMain.on('ui:minimizar', () => {});
@@ -107,6 +117,13 @@ app.whenReady().then(async () => {
   const fin = await leer(`({fase, texto: document.getElementById('text').value, bytes: ultimoWav && ultimoWav.byteLength, panel: !document.getElementById('panel').hidden})`);
   comprobar('el ciclo cierra', fin.fase === 'inicial', JSON.stringify(fin.texto));
   comprobar('el panel se despliega con el texto', fin.panel === Boolean(fin.texto));
+
+  await pulsar('gear');
+  await espera(200);
+  comprobar('el engranaje pide abrir los ajustes', pidioAjustes);
+
+  const tema = await leer(`document.documentElement.dataset.tema || 'sistema'`);
+  comprobar('el tema se aplica al arrancar', tema === ajustes.leer().tema, tema);
   if (consola.length) console.log(`  consola del renderer: ${consola.join(' · ')}`);
 
   terminar();

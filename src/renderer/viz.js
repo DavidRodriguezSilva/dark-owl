@@ -10,6 +10,8 @@ const Viz = {
   ctx: null,
   ancho: 0,
   alto: 0,
+  _estado: null,
+  _color: null,
 
   montar(canvas) {
     this.cv = canvas;
@@ -31,6 +33,22 @@ const Viz = {
   },
 
   /**
+   * El color no está escrito aquí: se declara en app.css sobre `.viz` según el
+   * estado y se lee ya resuelto, para que el medidor siga al tema sin que este
+   * código sepa nada de esquemas de color. Se cachea porque `pintar` corre en
+   * cada fotograma y `getComputedStyle` fuerza un recálculo de estilo.
+   */
+  color(estado) {
+    this.cv.dataset.estado = estado;
+    return getComputedStyle(this.cv).color;
+  },
+
+  /** El tema cambió: el color cacheado ya no vale. */
+  refrescar() {
+    this._color = null;
+  },
+
+  /**
    * @param {number[]} niveles 0..1, el más reciente al final
    * @param {'inicial'|'grabando'|'pausado'} estado
    */
@@ -46,8 +64,11 @@ const Viz = {
     const tope = h / 2 - 1;
 
     ctx.clearRect(0, 0, w, h);
-    ctx.fillStyle =
-      estado === 'grabando' ? '#f0483c' : estado === 'pausado' ? '#5c6480' : '#3b4256';
+    if (estado !== this._estado) {
+      this._estado = estado;
+      this._color = null;
+    }
+    ctx.fillStyle = this._color || (this._color = this.color(estado));
 
     // Las barras entran por la derecha: la más reciente queda pegada al borde.
     for (let i = 0; i < n; i++) {

@@ -51,26 +51,35 @@ dejar en disco un fichero parcial que la carga siguiente acepte como válido.
 - **THEN** la aplicación arranca con todos los valores por defecto, como si no
   hubiera fichero
 
-### Requirement: Panel de ajustes dentro de la ventana
+### Requirement: Ventana de ajustes independiente
 
-La aplicación SHALL ofrecer un panel de ajustes accesible desde un control
-permanente en la barra de título, sin abrir una ventana adicional.
+La aplicación SHALL ofrecer los ajustes en una ventana propia, accesible desde
+un control permanente en la fila de mandos de la ventana principal.
 
-El panel de ajustes y el panel de texto SHALL ser excluyentes: MUST NOT
-mostrarse ambos a la vez. Abrir los ajustes MUST NOT descartar el texto
-transcrito; al cerrarlos, el texto SHALL volver a mostrarse si lo había.
+La ventana de ajustes SHALL ser única: accionar el control con la ventana ya
+abierta la SHALL traer al frente en vez de abrir otra.
 
-En reposo, sin texto y sin ajustes abiertos, la ventana SHALL conservar su
-altura de tira.
+Abrir, usar o cerrar la ventana de ajustes MUST NOT alterar el estado de la
+ventana principal: ni su tamaño, ni el texto transcrito a la vista, ni una
+grabación en curso.
 
-#### Scenario: Abrir y cerrar los ajustes sin perder el texto
+Cerrar la ventana de ajustes MUST NOT cerrar la aplicación.
 
-- **GIVEN** hay un texto transcrito a la vista
-- **WHEN** el usuario abre el panel de ajustes y después lo cierra
-- **THEN** el texto vuelve a mostrarse íntegro, sin haberse perdido
+#### Scenario: El texto y el tamaño no se alteran
 
-#### Scenario: Cerrar los ajustes sin texto pliega la ventana
+- **GIVEN** hay un texto transcrito a la vista en la ventana principal
+- **WHEN** el usuario abre la ventana de ajustes, cambia una preferencia y la
+  cierra
+- **THEN** la ventana principal conserva su tamaño y su texto íntegro
 
-- **GIVEN** no hay texto transcrito y el panel de ajustes está abierto
-- **WHEN** el usuario cierra el panel de ajustes
-- **THEN** la ventana vuelve a su altura de tira
+#### Scenario: Una sola ventana de ajustes
+
+- **GIVEN** la ventana de ajustes ya está abierta
+- **WHEN** el usuario acciona de nuevo el control de ajustes
+- **THEN** la ventana existente pasa al frente y no se abre una segunda
+
+#### Scenario: Grabar mientras los ajustes están abiertos
+
+- **GIVEN** hay una grabación en curso
+- **WHEN** el usuario abre la ventana de ajustes
+- **THEN** la grabación continúa sin interrumpirse
