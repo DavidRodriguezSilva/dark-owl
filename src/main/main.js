@@ -16,15 +16,17 @@ if (process.platform === 'linux') {
 
 const ANCHO = 420;
 const ANCHO_MINIMO = 360;
-const ALTO_PLEGADO = 96; // barra de título + fila de mandos
+// 1 + 30 (barra) + 50 (fila de mandos) + 1 de bordes. Medido, no estimado:
+// antes sobraban 10 px de hueco muerto bajo los botones.
+const ALTO_PLEGADO = 82;
 const ALTO_DESPLEGADO = 376;
 const ALTO_MINIMO_DESPLEGADO = 220;
 const SIN_LIMITE = 10000;
 
 // La ventana de ajustes es aparte porque su contenido crece —micrófono,
 // transcripción, glosario— y la tira no.
-const AJUSTES_ANCHO = 460;
-const AJUSTES_ALTO = 420;
+const AJUSTES_ANCHO = 440;
+const AJUSTES_ALTO = 250;
 
 // Fondo que Electron pinta antes de que el renderer dibuje. Con el tema claro,
 // dejarlo oscuro produce un destello en cada arranque.
@@ -111,7 +113,7 @@ function abrirAjustes() {
     width: AJUSTES_ANCHO,
     height: AJUSTES_ALTO,
     minWidth: 380,
-    minHeight: 280,
+    minHeight: 200,
     title: 'Ajustes — Dark Owl',
     icon: path.join(__dirname, '..', '..', 'assets', 'icon.png'),
     frame: false,

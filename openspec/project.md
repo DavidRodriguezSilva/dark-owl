@@ -64,7 +64,8 @@ src/preload/           puente contextBridge; única superficie visible del rende
 src/renderer/          UI, captura de audio, worklet PCM y medidor de nivel
 src/renderer/microfono.js  resolución del dispositivo de entrada (lógica pura)
 src/renderer/ajustes.html  ventana de ajustes, aparte de la tira principal
-scripts/               setup-whisper.js (compila el engine), icono.js, smokes
+scripts/               setup-whisper.js (compila el engine), icono.js (marca),
+                       iconos.js (iconografía de la UI), pruebas y smokes
 docs/                  notas de diseño y referencia
 vendor/                engine compilado + modelos (git-ignored, nunca versionar)
 ```
@@ -143,6 +144,16 @@ re-litigar sin motivo nuevo.**
   calculado de una propiedad personalizada **no** resuelve `light-dark()`, así
   que quien pinte en canvas debe leer una propiedad real (`.viz` declara su
   `color` por estado y `viz.js` lee `getComputedStyle(canvas).color`).
+- **Iconografía**: Lucide (ISC) con los trazos **incrustados** en el sprite de
+  cada HTML, regenerables con `pnpm run iconos`. Ni dependencia —el árbol de
+  producción es cero-dependencias— ni sprite externo, que chocaría con el CSP
+  bajo `file://`. El transporte (grabar, pausar, detener) va relleno y el resto
+  en trazo: a 16 px una silueta llena se lee y un contorno no.
+- **Marca**: el búho tiene tres variantes según el tamaño, y la frontera está
+  medida: cabeza completa ≥40 px, ojos y pico a 32, sólo ojos a 24 y 16. Las
+  tres se pintan **en fila** en una sola página, no apiladas: el gestor de
+  ventanas recorta la ventana al alto de la pantalla y la tercera salía cortada
+  sin que nada avisara.
 - **Aceleración por hardware desactivada en Linux**: bajo WSLg la rasterización
   por GPU llena la consola de `Creation of StagingBuffer's SharedImage failed`.
 

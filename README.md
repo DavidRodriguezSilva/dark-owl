@@ -217,7 +217,16 @@ funciona sin red desde el primer arranque.
 
 Los iconos (`assets/icon.png` y `assets/icon.ico` con siete medidas) están
 versionados. Para rehacerlos tras un cambio de diseño: `pnpm run icono`, que los
-pinta como HTML y los captura, sin librerías de imagen.
+pinta como HTML y los captura, sin librerías de imagen. El búho tiene **tres
+variantes** y la frontera está medida: la cabeza completa de 40 px en adelante,
+ojos y pico a 32, y sólo los ojos a 24 y 16 — por debajo de 32 el trazo se funde
+en una mancha.
+
+La iconografía de la interfaz es de [Lucide](https://lucide.dev) (ISC). Los
+trazos van **incrustados** en el sprite de cada HTML, no instalados: el árbol de
+producción es cero-dependencias y un sprite externo chocaría con el CSP bajo
+`file://`. `pnpm run iconos` los regenera desde el paquete oficial, que baja a
+un temporal sin instalarlo.
 
 Para el ejecutable de Windows hay que construir **en Windows**: aquí `vendor/`
 contiene binarios ELF y un paquete armado desde WSL arrancaría y fallaría al
