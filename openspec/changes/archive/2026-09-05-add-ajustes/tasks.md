@@ -73,7 +73,7 @@
       necesita voz real.
 - [x] 5.5 Roto a mano en tres formas —texto que no es JSON, valor no admitido
       y JSON truncado— y `pnpm start` arrancó limpio en los tres casos.
-- [ ] 5.6 Manual del propietario: en Windows, que *seguir al sistema* responda
+- [x] 5.6 Manual del propietario: en Windows, que *seguir al sistema* responda
       al esquema del sistema, y que abrir los ajustes con una grabación en
       curso no la interrumpa. Bajo WSLg el esquema del sistema resuelve a
       claro, así que el camino de *seguir al sistema* sí quedó ejercitado
