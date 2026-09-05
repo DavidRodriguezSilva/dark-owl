@@ -12,11 +12,18 @@ const Viz = {
   alto: 0,
   _estado: null,
   _color: null,
+  _ultimos: [],
 
   montar(canvas) {
     this.cv = canvas;
     this.ctx = canvas.getContext('2d');
-    const ajustar = () => this.medir();
+    // Redimensionar el canvas borra su contenido, así que hay que repintar: sin
+    // esto, un medidor que no está en un bucle de animación se queda en blanco
+    // tras el primer ajuste de tamaño.
+    const ajustar = () => {
+      this.medir();
+      this.pintar(this._ultimos, this._estado || 'inicial');
+    };
     new ResizeObserver(ajustar).observe(canvas);
     ajustar();
   },
@@ -63,6 +70,7 @@ const Viz = {
     const medio = h / 2;
     const tope = h / 2 - 1;
 
+    this._ultimos = niveles;
     ctx.clearRect(0, 0, w, h);
     if (estado !== this._estado) {
       this._estado = estado;

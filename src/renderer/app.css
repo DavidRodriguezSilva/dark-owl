@@ -33,7 +33,6 @@
   color-scheme: dark;
 }
 
-
 * {
   box-sizing: border-box;
 }
@@ -114,8 +113,8 @@ body {
   cursor: pointer;
 }
 .wbtn svg {
-  width: 15px;
-  height: 15px;
+  width: 14px;
+  height: 14px;
 }
 .wbtn:hover {
   background: var(--tecla);
@@ -152,8 +151,8 @@ body {
   display: grid;
   place-items: center;
   flex: none;
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   padding: 0;
   border: 0;
   border-radius: 9px;
@@ -162,8 +161,8 @@ body {
   cursor: pointer;
 }
 .key svg {
-  width: 19px;
-  height: 19px;
+  width: 16px;
+  height: 16px;
   fill: currentColor;
   pointer-events: none;
 }
@@ -362,67 +361,71 @@ textarea::-webkit-scrollbar-thumb:hover {
   overflow-y: auto;
 }
 
-.grupo {
+
+
+/* Una opción por línea: nombre a la izquierda y su control a la derecha. El
+   ancho fijo del nombre es lo que alinea todas las filas entre sí. */
+.opcion {
   display: flex;
-  flex-direction: column;
-  gap: 9px;
+  align-items: center;
+  gap: 10px;
 }
 
-.grupo__titulo {
-  font-size: 10px;
+.opcion__nombre {
+  flex: none;
+  width: 62px;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.11em;
-  text-transform: uppercase;
   color: var(--tenue);
 }
 
-.campo {
+/* Grupo de iconos excluyentes. Con tres opciones un desplegable escondería dos
+   por nada, y con icono se leen sin texto. */
+.iconos {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.campo__nota {
-  font-size: 11px;
-  font-weight: 500;
-  line-height: 1.45;
-  color: var(--tenue);
-}
-
-/* Segmentado: tres opciones excluyentes en una fila, sin desplegable. Con tres
-   valores, un <select> escondería dos de ellos por nada. */
-.seg {
-  display: flex;
-  gap: 4px;
+  gap: 3px;
   padding: 3px;
   background: var(--panel);
   border: 1px solid var(--linea);
-  border-radius: 10px;
+  border-radius: 9px;
 }
 
-.seg button {
-  flex: 1;
-  padding: 7px 4px;
+.iconos button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 26px;
+  padding: 0;
   border: 0;
-  border-radius: 7px;
+  border-radius: 6px;
   background: transparent;
   color: var(--tenue);
-  font: inherit;
-  font-size: 12px;
-  font-weight: 700;
   cursor: pointer;
 }
-.seg button:hover:not([aria-pressed='true']) {
+.iconos button svg {
+  width: 15px;
+  height: 15px;
+}
+.iconos button:hover:not([aria-pressed='true']) {
   background: var(--tecla);
   color: var(--texto);
 }
-.seg button[aria-pressed='true'] {
+.iconos button[aria-pressed='true'] {
   background: var(--tecla-alta);
   color: var(--texto);
 }
-.seg button:focus-visible {
+.iconos button:focus-visible {
   outline: 2px solid var(--tenue);
   outline-offset: 1px;
+}
+
+/* Sólo aparece cuando hay algo que decir: no es ayuda, es un aviso. */
+.aviso {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--espera);
 }
 
 .fila {

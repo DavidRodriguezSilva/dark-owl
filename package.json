@@ -17,6 +17,7 @@
     "prueba:ajustes": "node scripts/prueba-ajustes.js",
     "prueba:microfono": "node scripts/prueba-microfono.js",
     "icono": "electron scripts/icono.js",
+    "iconos": "node scripts/iconos.js",
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
     "smoke": "electron scripts/smoke.js",

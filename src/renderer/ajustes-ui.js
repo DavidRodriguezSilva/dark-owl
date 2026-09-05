@@ -1,7 +1,7 @@
 'use strict';
 
 const el = (id) => document.getElementById(id);
-const seg = el('tema');
+const grupoTema = el('tema');
 const selector = el('mic');
 const nota = el('micNota');
 const btnProbar = el('probar');
@@ -17,12 +17,12 @@ let reloj = 0;
 /* ---- tema ---- */
 
 function marcarTema(valor) {
-  for (const b of seg.querySelectorAll('button')) {
+  for (const b of grupoTema.querySelectorAll('button')) {
     b.setAttribute('aria-pressed', String(b.dataset.valor === valor));
   }
 }
 
-seg.addEventListener('click', async (e) => {
+grupoTema.addEventListener('click', async (e) => {
   const boton = e.target.closest('button[data-valor]');
   if (!boton) return;
   // Se marca antes de que el guardado responda: el CSS ya aplicó el tema y
@@ -34,6 +34,12 @@ seg.addEventListener('click', async (e) => {
 });
 
 /* ---- micrófono ---- */
+
+/** El aviso sólo existe cuando hay algo que decir; no es un texto de ayuda. */
+function avisar(texto) {
+  nota.textContent = texto ? `⚠ ${texto}` : '';
+  nota.hidden = !texto;
+}
 
 async function listar() {
   const dispositivos = await Recorder.dispositivos();
@@ -49,16 +55,18 @@ async function listar() {
   if (selector.selectedIndex < 0) selector.selectedIndex = 0;
 
   if (!dispositivos.length) {
-    nota.textContent = '⚠ no se detectó ningún micrófono.';
+    avisar('no se detectó ningún micrófono');
   } else if (elegido.sustituido && elegido.falta) {
     // La preferencia guardada no se toca: si el dispositivo vuelve, se readopta.
-    nota.textContent = `⚠ «${elegido.falta}» no está conectado; se usará ${selector.options[selector.selectedIndex].text}.`;
-  } else if (elegido.adoptado) {
-    // El identificador cambió pero es el mismo aparato: se reancla en silencio.
-    config = await window.api.ajustes.guardar({ microfono: { id: elegido.id, etiqueta: elegido.etiqueta } });
-    nota.textContent = 'Prueba el micrófono para ver si capta antes de fiarte de él.';
+    avisar(`«${elegido.falta}» no está conectado; se usará ${selector.options[selector.selectedIndex].text}`);
   } else {
-    nota.textContent = 'Prueba el micrófono para ver si capta antes de fiarte de él.';
+    // El identificador cambió pero es el mismo aparato: se reancla en silencio.
+    if (elegido.adoptado) {
+      config = await window.api.ajustes.guardar({
+        microfono: { id: elegido.id, etiqueta: elegido.etiqueta },
+      });
+    }
+    avisar('');
   }
 }
 
@@ -98,10 +106,10 @@ btnProbar.addEventListener('click', async () => {
   try {
     await Recorder.iniciar(config.microfono);
   } catch (err) {
-    nota.textContent = `⚠ no se pudo abrir el micrófono: ${err.message}`;
+    avisar(`no se pudo abrir el micrófono: ${err.message}`);
     return;
   }
-  if (Recorder.aviso) nota.textContent = `⚠ ${Recorder.aviso}`;
+  if (Recorder.aviso) avisar(Recorder.aviso);
 
   btnProbar.setAttribute('aria-pressed', 'true');
   btnProbar.textContent = 'Parar';
