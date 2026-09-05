@@ -80,6 +80,64 @@ app.whenReady().then(async () => {
       `${colorAntes} → ${colorDespues}`,
     );
 
+    // --- micrófono ---
+    const opciones = await jsA(`Array.from(document.getElementById('mic').options).map(o => o.text)`);
+    comprobar('la lista de micrófonos se pinta', opciones.length >= 1, opciones.join(' · '));
+    comprobar('la primera opción es el del sistema', opciones[0] === 'El que diga el sistema');
+
+    const reales = await jsA(`Array.from(document.getElementById('mic').options).slice(1).map(o => ({id: o.value, txt: o.text}))`);
+    if (reales.length) {
+      await jsA(`(() => { const s = document.getElementById('mic'); s.selectedIndex = 1; s.dispatchEvent(new Event('change')); })()`);
+      await espera(700);
+      const guardado = JSON.parse(fs.readFileSync(ruta, 'utf8')).microfono;
+      comprobar(
+        'elegir un micrófono lo guarda con id y etiqueta',
+        guardado.id === reales[0].id && guardado.etiqueta === reales[0].txt,
+        JSON.stringify(guardado),
+      );
+      comprobar('no se persiste el groupId', !('grupo' in guardado) && !('groupId' in guardado));
+    } else {
+      comprobar('hay al menos un micrófono para elegir', false, 'ninguno en este entorno');
+    }
+
+    // Un dispositivo que no existe: debe grabar igual, avisar, y NO borrar la
+    // preferencia guardada — si el micrófono vuelve, se readopta.
+    const inventado = { id: 'no-existe-jamas', etiqueta: 'Micrófono Fantasma' };
+    fs.writeFileSync(ruta, JSON.stringify({ version: 1, tema: 'oscuro', microfono: inventado }, null, 2));
+    const r = await js(`(async () => {
+      await Recorder.iniciar({ id: 'no-existe-jamas', etiqueta: 'Micrófono Fantasma' });
+      const aviso = Recorder.aviso;
+      await Recorder.cancelar();
+      return aviso;
+    })()`);
+    comprobar('un micrófono ausente avisa en vez de sustituir en silencio', Boolean(r), r || 'sin aviso');
+    comprobar('el aviso nombra el dispositivo que falta', String(r).includes('Micrófono Fantasma'));
+    comprobar(
+      'caer al primero de la lista no borra la preferencia',
+      JSON.parse(fs.readFileSync(ruta, 'utf8')).microfono.id === inventado.id,
+    );
+
+    // --- probar el micrófono ---
+    fs.rmSync(ruta, { force: true });
+    await jsA(`document.getElementById('probar').click()`);
+    await espera(1200);
+    comprobar('probar abre el micrófono', await jsA(`Recorder.activo`));
+    comprobar('la prueba recoge nivel', (await jsA(`Recorder.niveles.length`)) > 0);
+
+    // Dos capturas del mismo dispositivo a la vez: la de la tira y la de la
+    // prueba. Chromium lo permite, pero conviene verlo y no suponerlo.
+    await js(`document.getElementById('record').click()`);
+    await espera(1200);
+    comprobar(
+      'grabar con la prueba abierta no rompe ninguna de las dos',
+      (await js(`fase === 'grabando' && Recorder.chunks.length > 0`)) && (await jsA(`Recorder.activo`)),
+    );
+    await js(`Recorder.cancelar().then(() => { fase = 'inicial'; })`);
+
+    await jsA(`document.getElementById('probar').click()`);
+    await espera(600);
+    comprobar('pulsar de nuevo cierra el micrófono de la prueba', !(await jsA(`Recorder.activo`)));
+
     ajustes.close();
     await espera(800);
     comprobar(

@@ -31,6 +31,8 @@ let engineListo = false;
 let ultimoWav = null; // se conserva para poder reprocesar
 let tick = 0;
 let cuadro = 0;
+// Copia local de los ajustes, refrescada cuando cambian desde la otra ventana.
+let config = { microfono: { id: '', etiqueta: '' } };
 
 function reloj(ms) {
   const s = Math.floor(ms / 1000);
@@ -114,7 +116,7 @@ btn.grabar.addEventListener('click', async () => {
   pintar();
 
   try {
-    await Recorder.iniciar();
+    await Recorder.iniciar(config.microfono);
   } catch (err) {
     fase = 'inicial';
     salida.value = `⚠ sin micrófono: ${err.message}`;
@@ -122,6 +124,9 @@ btn.grabar.addEventListener('click', async () => {
     pintar();
     return;
   }
+  // Si se acabó grabando de otro micrófono hay que decirlo ya, no al final: una
+  // sustitución muda no se distingue de una mala transcripción.
+  salida.value = Recorder.aviso ? `⚠ ${Recorder.aviso}` : '';
   ultimoWav = null;
   salida.value = '';
   timer.textContent = '00:00'; // el primer tick tarda 200 ms; sin esto se ve el tiempo anterior
@@ -212,7 +217,12 @@ function estadoEngine(s) {
 
 Viz.montar(el('viz'));
 // El medidor cachea su color: al cambiar el tema hay que invalidarlo.
-Tema.iniciar(() => Viz.refrescar());
+Tema.iniciar((nuevo) => {
+  config = nuevo;
+  Viz.refrescar();
+}).then((inicial) => {
+  config = inicial;
+});
 cuadro = requestAnimationFrame(animar);
 window.api.onEngineStatus(estadoEngine);
 window.api.engineStatus().then(estadoEngine);

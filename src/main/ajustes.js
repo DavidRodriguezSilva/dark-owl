@@ -7,15 +7,35 @@ const { app } = require('electron');
 const VERSION = 1;
 
 // Un ajuste inválido nunca puede impedir que la app abra, así que cada campo
-// declara sus valores admitidos y su defecto aquí. La validación de la carga
-// se deriva de esta tabla y no de una lista repetida en otro sitio.
+// declara aquí su defecto y cómo se valida. La validación de la carga se deriva
+// de esta tabla y no de una lista repetida en otro sitio.
+//
+// Un campo se valida por `admitidos` cuando su conjunto de valores es cerrado,
+// o por `valida()` cuando es texto libre con una forma esperada — un
+// identificador de dispositivo no cabe en una lista.
 const CAMPOS = {
   tema: { admitidos: ['sistema', 'claro', 'oscuro'], defecto: 'sistema' },
+  microfono: {
+    defecto: { id: '', etiqueta: '' },
+    // Se guarda la etiqueta además del id: el id sirve para abrir el
+    // dispositivo, la etiqueta para nombrarlo cuando falta y para reconocerlo
+    // si Chromium le cambia el número.
+    valida: (v) => Boolean(v) && typeof v.id === 'string' && typeof v.etiqueta === 'string',
+  },
 };
+
+function esValido(campo, valor) {
+  if (campo.admitidos) return campo.admitidos.includes(valor);
+  return campo.valida(valor);
+}
 
 function porDefecto() {
   const salida = { version: VERSION };
-  for (const [clave, campo] of Object.entries(CAMPOS)) salida[clave] = campo.defecto;
+  // Copia por campo: los defectos que son objeto se compartirían entre
+  // llamadas, y quien mutara uno se lo cambiaría a todos.
+  for (const [clave, campo] of Object.entries(CAMPOS)) {
+    salida[clave] = typeof campo.defecto === 'object' ? { ...campo.defecto } : campo.defecto;
+  }
   return salida;
 }
 
@@ -32,7 +52,14 @@ function validar(crudo) {
   const salida = porDefecto();
   if (!crudo || typeof crudo !== 'object') return salida;
   for (const [clave, campo] of Object.entries(CAMPOS)) {
-    if (campo.admitidos.includes(crudo[clave])) salida[clave] = crudo[clave];
+    if (esValido(campo, crudo[clave])) {
+      // Sólo los campos declarados, y de los objetos sólo sus claves conocidas:
+      // un fichero editado a mano no debe poder colar propiedades de más.
+      salida[clave] =
+        typeof campo.defecto === 'object'
+          ? Object.fromEntries(Object.keys(campo.defecto).map((k) => [k, crudo[clave][k]]))
+          : crudo[clave];
+    }
   }
   return salida;
 }

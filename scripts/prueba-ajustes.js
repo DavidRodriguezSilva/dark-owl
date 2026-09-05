@@ -26,7 +26,15 @@ function prueba(nombre, fn) {
 }
 
 prueba('sin fichero devuelve los valores por defecto', () => {
-  assert.deepEqual(ajustes.leer(ruta), { version: 1, tema: 'sistema' });
+  assert.deepEqual(ajustes.leer(ruta), ajustes.porDefecto());
+  assert.equal(ajustes.porDefecto().tema, 'sistema');
+  assert.deepEqual(ajustes.porDefecto().microfono, { id: '', etiqueta: '' });
+});
+
+prueba('los defectos que son objeto no se comparten entre llamadas', () => {
+  const a = ajustes.porDefecto();
+  a.microfono.id = 'tocado';
+  assert.equal(ajustes.porDefecto().microfono.id, '');
 });
 
 prueba('un fichero que no parsea equivale a no tener fichero', () => {
@@ -49,6 +57,38 @@ prueba('los campos desconocidos se descartan, no se arrastran', () => {
   const leido = ajustes.leer(ruta);
   assert.equal(leido.tema, 'oscuro');
   assert.equal('retirado' in leido, false);
+});
+
+prueba('un microfono con la forma esperada se conserva', () => {
+  const mic = { id: 'abc123', etiqueta: 'Yeti' };
+  fs.writeFileSync(ruta, JSON.stringify({ version: 1, microfono: mic }));
+  assert.deepEqual(ajustes.leer(ruta).microfono, mic);
+});
+
+prueba('un microfono con forma inesperada cae a su defecto', () => {
+  for (const malo of [42, 'abc', null, [], { id: 7, etiqueta: 'x' }, { id: 'x' }]) {
+    fs.writeFileSync(ruta, JSON.stringify({ version: 1, microfono: malo }));
+    assert.deepEqual(
+      ajustes.leer(ruta).microfono,
+      { id: '', etiqueta: '' },
+      `no cayó al defecto con ${JSON.stringify(malo)}`,
+    );
+  }
+});
+
+prueba('un microfono con claves de más las pierde', () => {
+  fs.writeFileSync(
+    ruta,
+    JSON.stringify({ version: 1, microfono: { id: 'a', etiqueta: 'b', colado: 'c' } }),
+  );
+  assert.deepEqual(ajustes.leer(ruta).microfono, { id: 'a', etiqueta: 'b' });
+});
+
+prueba('un campo inválido no arrastra a los demás', () => {
+  fs.writeFileSync(ruta, JSON.stringify({ version: 1, tema: 'claro', microfono: 42 }));
+  const leido = ajustes.leer(ruta);
+  assert.equal(leido.tema, 'claro');
+  assert.deepEqual(leido.microfono, { id: '', etiqueta: '' });
 });
 
 prueba('guardar escribe y leer lo recupera', () => {

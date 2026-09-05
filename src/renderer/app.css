@@ -424,3 +424,54 @@ textarea::-webkit-scrollbar-thumb:hover {
   outline: 2px solid var(--tenue);
   outline-offset: 1px;
 }
+
+.fila {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sel {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--linea);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--texto);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn {
+  flex: none;
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--linea);
+  border-radius: 8px;
+  background: var(--tecla);
+  color: var(--texto);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.btn:hover {
+  background: var(--tecla-alta);
+}
+.btn[aria-pressed='true'] {
+  background: var(--rec);
+  border-color: var(--rec);
+  color: var(--sobre-rec);
+}
+
+/* El medidor de la prueba: mismo canvas y mismo dibujo que el de la tira. */
+.viz--prueba {
+  height: 32px;
+  border: 1px solid var(--linea);
+  border-radius: 8px;
+  background: var(--panel);
+}

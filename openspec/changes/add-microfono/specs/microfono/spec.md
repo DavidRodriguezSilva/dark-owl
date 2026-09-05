@@ -32,11 +32,40 @@ cuando el sistema informe de que se ha conectado o retirado un dispositivo.
   refrescar
 - **THEN** el micrófono nuevo aparece en la lista y puede elegirse
 
-### Requirement: Un dispositivo ausente se avisa, no se sustituye en silencio
+### Requirement: El dispositivo elegido se resuelve contra los disponibles
 
-Si el dispositivo elegido no está disponible al empezar a grabar, la
-aplicación SHALL grabar con el que determine el sistema y SHALL avisar de que
-lo ha hecho, nombrando el dispositivo que falta.
+Antes de usar el dispositivo elegido, la aplicación SHALL comprobar que sigue
+existiendo entre los disponibles, tanto al presentar los ajustes como al
+empezar a grabar.
+
+La resolución SHALL seguir este orden: el dispositivo cuyo identificador
+coincida con el guardado; en su defecto, uno cuya etiqueta coincida con la
+guardada, adoptando su identificador; y en su defecto, el primero de la lista
+de dispositivos disponibles.
+
+Recurrir al primero de la lista MUST NOT borrar la preferencia guardada: si el
+dispositivo elegido vuelve a estar disponible, la aplicación SHALL volver a
+usarlo sin que el usuario tenga que elegirlo de nuevo.
+
+#### Scenario: El dispositivo vuelve con otro identificador
+
+- **GIVEN** el identificador guardado ya no corresponde a ningún dispositivo,
+  pero hay uno disponible con la misma etiqueta que la guardada
+- **WHEN** la aplicación resuelve qué dispositivo usar
+- **THEN** adopta ese dispositivo como el elegido, sin pedir nada al usuario
+
+#### Scenario: El dispositivo elegido vuelve tras desconectarlo
+
+- **GIVEN** el dispositivo elegido no estaba disponible y la aplicación está
+  usando el primero de la lista
+- **WHEN** el dispositivo elegido vuelve a estar disponible
+- **THEN** la aplicación vuelve a usarlo, sin que el usuario lo elija de nuevo
+
+### Requirement: Una sustitución de dispositivo siempre se avisa
+
+Si la aplicación acaba grabando con un dispositivo distinto del elegido, SHALL
+grabar de todos modos —nunca dejar al usuario sin poder grabar— y SHALL
+avisar de que lo ha hecho, nombrando el dispositivo que falta.
 
 La aplicación MUST NOT sustituir el dispositivo elegido por otro sin que el
 usuario se entere: una transcripción capturada de un micrófono distinto del
@@ -46,15 +75,8 @@ que el usuario cree no es distinguible de una mala transcripción.
 
 - **GIVEN** el usuario eligió un micrófono y después lo desconectó
 - **WHEN** pulsa grabar
-- **THEN** la grabación se realiza con el dispositivo por defecto del sistema y
-  la aplicación avisa de que el micrófono elegido no estaba disponible
-
-#### Scenario: El dispositivo vuelve con otro identificador
-
-- **GIVEN** el identificador guardado ya no corresponde a ningún dispositivo,
-  pero hay uno disponible con la misma etiqueta que la guardada
-- **WHEN** la aplicación resuelve qué dispositivo usar
-- **THEN** adopta ese dispositivo como el elegido, sin pedir nada al usuario
+- **THEN** la grabación se realiza con otro dispositivo disponible y la
+  aplicación avisa de que el micrófono elegido no estaba disponible
 
 ### Requirement: Comprobar que un dispositivo capta sonido
 

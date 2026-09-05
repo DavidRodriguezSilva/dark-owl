@@ -11,6 +11,7 @@
   </head>
   <body>
     <svg class="sprite" aria-hidden="true">
+      <symbol id="i-again" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.6-5.9M20 3.5V8h-4.5" /></symbol>
       <symbol id="i-min" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 12h12" /></symbol>
       <symbol id="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17" /></symbol>
     </svg>
@@ -42,6 +43,25 @@
             </p>
           </div>
         </div>
+
+        <div class="grupo">
+          <h2 class="grupo__titulo">Entrada</h2>
+          <div class="campo">
+            <div class="fila">
+              <select id="mic" class="sel" aria-label="Micrófono"></select>
+              <button id="recargar" class="tool" title="Buscar dispositivos de nuevo" aria-label="Buscar dispositivos de nuevo">
+                <svg><use href="#i-again" /></svg>
+              </button>
+            </div>
+            <div class="fila">
+              <button id="probar" type="button" class="btn">Probar</button>
+              <canvas id="nivel" class="viz viz--prueba" width="1" height="1"></canvas>
+            </div>
+            <p id="micNota" class="campo__nota">
+              Prueba el micrófono para ver si capta antes de fiarte de él.
+            </p>
+          </div>
+        </div>
       </section>
 
       <i class="asa asa--der" data-ejes="x"></i>
@@ -51,6 +71,10 @@
 
     <script src="tema.js"></script>
     <script src="asas.js"></script>
+    <script src="nivel.js"></script>
+    <script src="microfono.js"></script>
+    <script src="recorder.js"></script>
+    <script src="viz.js"></script>
     <script src="ajustes-ui.js"></script>
   </body>
 </html>

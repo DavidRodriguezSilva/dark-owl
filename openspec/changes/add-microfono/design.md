@@ -51,29 +51,45 @@ Se comprobó empíricamente en este entorno, con las dos ventanas abiertas:
   guardado, habría fallado justo entre las dos ventanas que este change
   necesita coordinar.
 
-- **D4 — Se guarda `{ id, etiqueta }`, no sólo el identificador.** El
-  `deviceId` basta para abrir el dispositivo, pero no para hablar de él. Con
-  la etiqueta guardada se puede:
+- **D4 — Se guarda `{ id, etiqueta }`, y se resuelve contra la lista real cada
+  vez que se va a usar.** El `deviceId` basta para abrir el dispositivo, pero
+  no para hablar de él ni para sobrevivir a que desaparezca.
 
-  - **Decir qué falta.** «El micrófono *Yeti* ya no está» es accionable;
-    «el dispositivo guardado no está disponible» no lo es.
-  - **Reencontrarlo.** Chromium rota los `deviceId` cuando se borran los datos
-    del sitio. Si el identificador guardado no aparece pero sí hay un
-    dispositivo con la misma etiqueta, es el mismo micrófono y se readopta.
+  Hay **una sola regla de resolución**, y se aplica igual al abrir los ajustes
+  y al empezar a grabar:
 
-  La etiqueta sola no serviría: hay equipos con dos dispositivos de idéntico
-  nombre. El identificador manda; la etiqueta es el desempate y el respaldo.
+  1. Sin nada guardado → el que diga el sistema.
+  2. El id guardado está en la lista → ése.
+  3. El id no está pero hay un dispositivo con la **misma etiqueta** → ése, y
+     se actualiza el id guardado. Chromium rota los `deviceId` al borrar los
+     datos del sitio; es el mismo micrófono con otro número.
+  4. Ninguna de las anteriores → **el primero de la lista**, y se avisa.
 
-- **D5 — Un dispositivo que no está se avisa; no se cae al de por defecto en
-  silencio.** Con `deviceId: { exact }`, `getUserMedia` lanza
-  `OverconstrainedError` si el dispositivo no existe. La tentación es capturar
-  el error y reintentar sin restricción, pero eso graba del micrófono
-  equivocado mientras el usuario cree que graba del suyo — y en una app de
-  dictado eso no se detecta hasta leer la transcripción.
+  La etiqueta sola no serviría para el paso 3: hay equipos con dos
+  dispositivos de idéntico nombre. El identificador manda; la etiqueta es el
+  desempate y el respaldo.
 
-  Se cae al de por defecto **y se dice**, en el mismo sitio donde ya se avisa
-  de que no se oyó nada. `exact` y no `ideal` precisamente para provocar el
-  error: con `ideal` el navegador sustituye el dispositivo sin avisar a nadie.
+  **En el paso 4 no se borra la preferencia guardada.** El dispositivo
+  *efectivo* pasa a ser el primero de la lista, pero lo elegido sigue anotado,
+  de modo que volver a enchufar el micrófono lo readopta por el paso 2 sin que
+  haya que reconfigurar nada. Borrarlo convertiría "he desenchufado los cascos
+  esta tarde" en "he perdido mi ajuste", y dejaría el paso 3 sin sentido.
+
+- **D5 — El dispositivo se sustituye, pero se avisa.** Con
+  `deviceId: { exact }`, `getUserMedia` lanza `OverconstrainedError` si el
+  dispositivo no existe; la resolución de D4 debería haberlo evitado, pero
+  entre resolver y abrir cabe una desconexión, así que el error se maneja
+  igualmente.
+
+  Se graba con el sustituto —nunca se deja al usuario sin poder grabar— y se
+  **dice**, en el mismo sitio donde ya se avisa de que no se oyó nada. Lo que
+  no puede pasar es la sustitución muda: en una app de dictado, una
+  transcripción capturada del micrófono equivocado no se distingue de una mala
+  transcripción, y no se detecta hasta leerla.
+
+  `exact` y no `ideal` precisamente para eso: con `ideal` el navegador
+  sustituye el dispositivo por su cuenta y no hay nada que avisar porque nadie
+  se entera.
 
 - **D6 — Recargar a mano y también solo.** El botón es el que se pidió y es la
   vía fiable. Además se escucha `devicechange`, que Chromium emite al enchufar
