@@ -59,8 +59,10 @@ src/main/main.js       ventana y manejadores IPC
 src/main/engine.js     ciclo de vida de whisper-server y POST /inference
 src/main/text.js       limpieza del transcrito
 src/main/paths.js      rutas de engine y modelo, en desarrollo y empaquetado
+src/main/ajustes.js    preferencias: defectos, validación y guardado atómico
 src/preload/           puente contextBridge; única superficie visible del renderer
 src/renderer/          UI, captura de audio, worklet PCM y medidor de nivel
+src/renderer/ajustes.html  ventana de ajustes, aparte de la tira principal
 scripts/               setup-whisper.js (compila el engine), icono.js, smokes
 docs/                  notas de diseño y referencia
 vendor/                engine compilado + modelos (git-ignored, nunca versionar)
@@ -115,6 +117,23 @@ re-litigar sin motivo nuevo.**
   de ventanas porque bajo WSLg agarrar por el borde no está garantizado. Sin
   transparencia: con ella las esquinas redondeadas se veían en blanco, así que
   la ventana es cuadrada y opaca.
+- **Ajustes**: `ajustes.json` en `app.getPath('userData')`, con sobre
+  versionado y escritura atómica (`.part` + rename). El main es el único dueño
+  del fichero — el renderer no tiene `fs`, y el main también lo necesita para
+  aplicar idioma y glosario al construir el `FormData` de la transcripción. Se
+  valida **al cargar**: un valor no admitido cae a su defecto y un fichero que
+  no parsea equivale a no tener fichero. Un ajuste inválido nunca puede
+  impedir que la app abra.
+- **Ventana de ajustes aparte**, no un panel dentro de la tira: su contenido va
+  a crecer (micrófono, transcripción, glosario) y la tira no. Es única —el
+  engranaje enfoca la existente— y no altera la ventana principal.
+- **Color**: cada valor se declara una sola vez con `light-dark(claro, oscuro)`
+  y el tema se elige cambiando `color-scheme`. Sin atributo se sigue al
+  sistema, que es el ajuste por defecto, y el primer pintado ya sale bien — el
+  CSP prohíbe un script en línea que lo aplicara antes. Corolario: el valor
+  calculado de una propiedad personalizada **no** resuelve `light-dark()`, así
+  que quien pinte en canvas debe leer una propiedad real (`.viz` declara su
+  `color` por estado y `viz.js` lee `getComputedStyle(canvas).color`).
 - **Aceleración por hardware desactivada en Linux**: bajo WSLg la rasterización
   por GPU llena la consola de `Creation of StagingBuffer's SharedImage failed`.
 
@@ -145,6 +164,12 @@ Dos smokes con la app real, porque hay cosas que ninguna prueba unitaria ve:
 - `pnpm run smoke:motor` — el ciclo de vida de `whisper-server`: que un huérfano
   de una ejecución anterior se recoge al arrancar y que **no** se mata un PID
   ajeno. Importa porque cada huérfano retiene el modelo entero en memoria.
+
+- `pnpm run prueba:ajustes` — lógica del fichero de preferencias, en Node sin
+  Electron por medio.
+- `pnpm run smoke:ajustes` — con el proceso main real: que el engranaje abre
+  una sola ventana, que el ajuste llega al disco y que el cambio de tema
+  alcanza a la otra ventana y al medidor.
 
 Al tocar audio, probar además con **voz real**: el silencio y los clips de menos
 de un segundo son los que rompen.

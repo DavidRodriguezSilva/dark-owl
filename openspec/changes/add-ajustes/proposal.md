@@ -21,9 +21,14 @@ Este change monta esa base y la estrena con el ajuste más barato que hay.
   fichero corrupto o editado a mano, validación por campo y guardado.
 - **Tres canales IPC nuevos** y una superficie nueva en `window.api`
   (`api.ajustes`), detallados en `design.md`.
-- **Panel de ajustes en la ventana**, abierto desde un botón de engranaje en
-  la barra de título. Ocupa el mismo espacio desplegado que el panel de texto
-  y es excluyente con él: la tira sigue midiendo lo mismo en reposo.
+- **Ventana de ajustes propia**, abierta desde un botón de engranaje en la
+  **fila de mandos**. No se mete en la tira: la ventana principal se queda
+  exactamente como está, sin exclusión con el panel de texto ni alto
+  compartido (D5).
+- **La fila de mandos se reordena** a `contador · medidor · grabar · pausar ·
+  detener · engranaje`. Hoy el medidor va al final; pasa a ir junto al
+  contador para que los mandos queden agrupados a la derecha y el engranaje
+  cierre la fila (D8).
 - **Tema claro/oscuro/seguir al sistema**, con `oscuro` como base y el sistema
   como valor por defecto. Es el ajuste con el que se estrena la
   infraestructura — ver `design.md`, decisión D1, que explica por qué se

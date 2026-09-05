@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'"
+    />
+    <title>Ajustes — Dark Owl</title>
+    <link rel="stylesheet" href="app.css" />
+  </head>
+  <body>
+    <svg class="sprite" aria-hidden="true">
+      <symbol id="i-min" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 12h12" /></symbol>
+      <symbol id="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17" /></symbol>
+    </svg>
+
+    <div class="win">
+      <header class="bar">
+        <span class="marca">Ajustes</span>
+        <div class="bar__ctl">
+          <button id="min" class="wbtn" title="Minimizar" aria-label="Minimizar">
+            <svg><use href="#i-min" /></svg>
+          </button>
+          <button id="close" class="wbtn wbtn--x" title="Cerrar" aria-label="Cerrar">
+            <svg><use href="#i-close" /></svg>
+          </button>
+        </div>
+      </header>
+
+      <section class="ajustes">
+        <div class="grupo">
+          <h2 class="grupo__titulo">Apariencia</h2>
+          <div class="campo">
+            <div id="tema" class="seg" role="group" aria-label="Esquema de color">
+              <button type="button" data-valor="sistema" aria-pressed="false">Sistema</button>
+              <button type="button" data-valor="claro" aria-pressed="false">Claro</button>
+              <button type="button" data-valor="oscuro" aria-pressed="false">Oscuro</button>
+            </div>
+            <p class="campo__nota">
+              «Sistema» sigue el esquema de Windows y cambia con él sin reiniciar.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <i class="asa asa--der" data-ejes="x"></i>
+      <i class="asa asa--abajo" data-ejes="y"></i>
+      <i class="asa asa--esquina" data-ejes="xy"></i>
+    </div>
+
+    <script src="tema.js"></script>
+    <script src="asas.js"></script>
+    <script src="ajustes-ui.js"></script>
+  </body>
+</html>

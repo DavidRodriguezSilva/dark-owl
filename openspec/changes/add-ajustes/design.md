@@ -70,22 +70,35 @@ juego oscuro. `src/renderer/viz.js` es la excepción: lleva `#f0483c`,
   Guardar sí valida también, pero por otra razón: para no escribir en disco
   algo que la carga siguiente va a tirar.
 
-- **D5 — El panel de ajustes reutiliza el despliegue existente; no se abre una
-  segunda ventana.** En la tira de 420×96 no cabe un panel de ajustes, así que
-  hace falta espacio. Una ventana aparte lo daría, pero traería posicionamiento
-  propio, su propio CSP, su propio preload y una segunda superficie que
-  mantener — mucho para enseñar dos botones.
+- **D5 — Los ajustes viven en una ventana propia, no dentro de la tira.** Se
+  consideraron tres formas y las dos primeras se descartan por lo mismo: el
+  contenido que viene.
 
-  El panel de ajustes ocupa el mismo hueco desplegado que el de texto y es
-  **excluyente** con él. Consecuencias que hay que implementar, no sólo
-  declarar:
+  1. *Panel excluyente con el texto, en el mismo despliegue.* Es lo más barato
+     hoy, pero condena los ajustes a 420 px de ancho para siempre y obliga a
+     que el panel de texto y el de ajustes se turnen, compartan
+     `altoDesplegado` y cambien la condición de `desplegar()`.
+  2. *A la derecha del texto.* En una ventana de 420 px deja ~200 px por lado,
+     inservible; y ensancharla a ~700 px al configurar contradice "súper
+     pequeña, súper minimalista".
+  3. *Ventana propia.* La elegida.
 
-  - La condición de desplegar deja de ser "hay texto" y pasa a ser "hay algo
-    que enseñar": texto, transcripción en curso **o** ajustes abiertos.
-  - `altoDesplegado` es compartido. Es aceptable: es la misma ventana y el
-    usuario eligió un alto para ella, no para cada panel.
-  - Abrir ajustes con texto a la vista **no descarta el texto**. Al cerrarlos
-    vuelve a verse. El texto sólo se pierde al limpiar, como hoy.
+  Lo que decide es el **glosario** del change 6: un editor de filas
+  —«se transcribe como» → «es»— con añadir y quitar. No cabe a la derecha del
+  texto, y dentro de la tira quedaría permanentemente estrecho. Los ajustes
+  van a crecer con micrófono, transcripción y glosario; la tira no.
+
+  Y el efecto en la ventana principal es de **quitar**, no de añadir: no hay
+  exclusión que gestionar, ni alto compartido, ni cambio en la condición de
+  `desplegar()`. La tira se queda exactamente como está.
+
+  Coste que se acepta: un HTML más, una `BrowserWindow` más y su propia barra
+  de título sin marco. Se reutilizan el mismo `preload.js`, la misma hoja de
+  estilos y la misma paleta, así que no aparece una segunda superficie de API
+  ni un segundo CSP que mantener.
+
+  La ventana de ajustes SHALL ser única: pulsar el engranaje con la ventana ya
+  abierta la trae al frente en vez de abrir otra.
 
 - **D6 — Tres estados de tema, no dos.** `claro`, `oscuro` y `sistema`, con
   `sistema` por defecto. El estado `sistema` se resuelve con
@@ -93,21 +106,67 @@ juego oscuro. `src/renderer/viz.js` es la excepción: lleva `#f0483c`,
   que es lo que permite que la app cambie sola si el usuario cambia el esquema
   de Windows sin reiniciarla. De ahí sale el tercer canal IPC.
 
-- **D7 — `oscuro` es la base en `:root`, `claro` es la sobreescritura.** Al
-  revés de lo habitual, y a propósito: la identidad del producto es oscura
-  —es un búho en un bosque de noche— y si algo falla al aplicar el tema, la
-  app debe quedarse oscura, no en un estado a medias. `[data-tema="claro"]`
-  redefine el mismo juego de variables.
+- **D7 — Cada color se declara una vez con `light-dark()`; el tema se elige
+  cambiando `color-scheme`.**
+
+  La propuesta original era el patrón habitual: juego oscuro en `:root` y
+  `[data-tema="claro"]` redefiniendo las mismas variables. Se descartó al
+  implementarlo por dos motivos concretos:
+
+  1. **Destello al arrancar.** El CSP es `script-src 'self'`, así que no se
+     puede meter un script en línea en el `<head>` que aplique el tema antes
+     del primer pintado. Con el patrón de sobreescritura, la página se pinta
+     oscura y salta a claro cuando el JS termina su ida y vuelta por IPC.
+     Con `light-dark()` el CSS resuelve solo: sin ningún atributo sigue a
+     `prefers-color-scheme`, que es exactamente el ajuste por defecto
+     (`sistema`), y el primer pintado ya sale bien.
+  2. **Duplicación.** El patrón de sobreescritura obliga a escribir la paleta
+     clara dos veces —una bajo `@media (prefers-color-scheme: light)` para el
+     caso `sistema` y otra bajo `[data-tema="claro"]`— y a mantenerlas en
+     sincronía a mano.
+
+  Queda: `:root { color-scheme: light dark; --bg: light-dark(#f4f5f8, #0d0e13); … }`
+  y sólo dos reglas de anulación, `[data-tema='claro'] { color-scheme: light }`
+  y `[data-tema='oscuro'] { color-scheme: dark }`.
+
+  El objetivo original de "si algo falla, que no quede a medias" se cumple
+  mejor así, no peor: con `light-dark()` no existe el estado intermedio que se
+  temía, porque todas las variables se resuelven a la vez desde un único
+  `color-scheme`. Lo que se pierde es el sesgo a oscuro ante un fallo; lo que
+  se gana es que el fallo no puede ocurrir.
 
   Esto obliga a dos cosas que no son obvias:
 
-  - **`viz.js` deja de llevar colores escritos.** Los lee con
-    `getComputedStyle` sobre el elemento raíz al montar y cuando cambia el
-    tema. Es un canvas: nadie le aplica CSS por él.
+  - **`viz.js` deja de llevar colores escritos.** No basta con leer la variable
+    CSS: el valor calculado de una propiedad personalizada es la secuencia de
+    componentes sin resolver, así que `getComputedStyle` devolvería el texto
+    literal `light-dark(…)`. La solución es declarar el color del medidor como
+    `color` sobre `.viz` según un `data-estado`, y que `viz.js` lea
+    `getComputedStyle(canvas).color`, que sí llega resuelto. El canvas acaba
+    preguntando "de qué color soy" en vez de decidirlo. Se cachea, porque
+    `pintar` corre en cada fotograma y `getComputedStyle` fuerza un recálculo
+    de estilo.
   - **`backgroundColor` de la `BrowserWindow`** está hoy fijado a `#0d0e13` en
     `src/main/main.js`. Es el color que Electron pinta antes de que el
     renderer dibuje; en tema claro produciría un destello oscuro en cada
-    arranque. Pasa a derivarse del tema efectivo.
+    arranque. Pasa a derivarse del tema efectivo, y se refresca con
+    `setBackgroundColor` al guardar y cuando cambia el esquema del sistema.
+
+- **D8 — El engranaje va en la fila de mandos, no en la barra de título, y la
+  fila se reordena.** La barra de título es cromo de ventana —arrastrar,
+  minimizar, cerrar—; los ajustes son un control de la aplicación, así que su
+  sitio es la fila donde ya viven los demás controles.
+
+  Orden nuevo: `contador · medidor · grabar · pausar · detener · engranaje`.
+  Hoy el medidor cierra la fila; pasa a ir junto al contador, de modo que los
+  cuatro botones queden agrupados a la derecha en vez de partidos por el
+  canvas.
+
+  Cabe, comprobado contra el CSS vigente: la fila tiene `padding: 10px 11px` y
+  `gap: 8px`, el contador ocupa 54 px fijos y cada botón 34 px. Con cuatro
+  botones y cinco huecos, al ancho mínimo de ventana (360 px) le quedan
+  ~108 px al medidor, y ~168 px al ancho por defecto (420 px). El medidor es
+  `flex: 1` con `min-width: 0`, así que absorbe la diferencia sin desbordar.
 
 ## Superficie IPC nueva
 
@@ -117,7 +176,8 @@ Toda API nueva expuesta al renderer, con su forma:
 |---|---|---|
 | `ajustes:leer` | `invoke` | `() → { version, tema }` |
 | `ajustes:guardar` | `invoke` | `(parche) → { version, tema }` — parche parcial, se fusiona, valida y escribe; devuelve el estado resultante |
-| `ajustes:cambiado` | `main → renderer` | `{ version, tema }` — se emite cuando el tema efectivo cambia por debajo, es decir cuando el sistema cambia de esquema y el ajuste es `sistema` |
+| `ajustes:cambiado` | `main → renderer` | `{ version, tema }` — se emite **a todas las ventanas** cuando cambian los ajustes: al guardarlos desde la ventana de ajustes, y cuando el sistema cambia de esquema con el ajuste en `sistema` |
+| `ui:ajustes` | `send` | `()` — abre la ventana de ajustes, o la enfoca si ya está abierta |
 
 En `window.api`:
 
@@ -134,9 +194,9 @@ que ya sigue ese patrón.
 
 ## Risks / Trade-offs
 
-- **El panel excluyente esconde el texto mientras se configura.** Es
-  deliberado (D5) y el texto no se pierde. La alternativa —ensanchar la
-  ventana para poner ambos— contradice "súper pequeña".
+- **Dos ventanas a la vez en pantalla.** Es el coste de D5. Se mitiga con
+  ventana única (el engranaje enfoca la existente) y con que la de ajustes se
+  cierre sin afectar a la principal.
 - **Un tema claro mal contrastado es peor que no tenerlo.** El medidor y los
   botones sólidos están calibrados contra fondo oscuro. Por eso la
   verificación exige mirar el ciclo completo en tema claro, no sólo que las

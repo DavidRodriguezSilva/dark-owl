@@ -14,11 +14,13 @@
     "start": "electron .",
     "setup": "node scripts/setup-whisper.js",
     "setup:cuda": "node scripts/setup-whisper.js --cuda",
+    "prueba:ajustes": "node scripts/prueba-ajustes.js",
     "icono": "electron scripts/icono.js",
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
     "smoke": "electron scripts/smoke.js",
-    "smoke:motor": "electron scripts/smoke-motor.js"
+    "smoke:motor": "electron scripts/smoke-motor.js",
+    "smoke:ajustes": "electron scripts/smoke-ajustes.js"
   },
   "devDependencies": {
     "electron": "^42.4.0",

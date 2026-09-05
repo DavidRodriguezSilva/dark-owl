@@ -187,35 +187,9 @@ btn.limpiar.addEventListener('click', () => {
   pintar();
 });
 
-/** Arrastra un asidero para redimensionar. */
-function asa(elemento, ejes) {
-  elemento.addEventListener('pointerdown', async (e) => {
-    e.preventDefault();
-    const [ancho0, alto0] = await window.api.ventana.tam();
-    const x0 = e.screenX;
-    const y0 = e.screenY;
-    // Capturar el puntero: si no, al salirse de la ventana se pierde el arrastre.
-    elemento.setPointerCapture(e.pointerId);
-
-    const mover = (ev) => {
-      window.api.ventana.redimensionar(
-        ejes.includes('x') ? ancho0 + (ev.screenX - x0) : ancho0,
-        ejes.includes('y') ? alto0 + (ev.screenY - y0) : alto0,
-      );
-    };
-    const soltar = () => {
-      elemento.removeEventListener('pointermove', mover);
-      elemento.removeEventListener('pointerup', soltar);
-    };
-    elemento.addEventListener('pointermove', mover);
-    elemento.addEventListener('pointerup', soltar);
-  });
-}
-
-for (const e of document.querySelectorAll('.asa')) asa(e, e.dataset.ejes);
-
 el('min').addEventListener('click', () => window.api.ventana.minimizar());
 el('close').addEventListener('click', () => window.api.ventana.cerrar());
+el('gear').addEventListener('click', () => window.api.ventana.ajustes());
 
 function estadoEngine(s) {
   engineListo = s.ready;
@@ -237,6 +211,8 @@ function estadoEngine(s) {
 }
 
 Viz.montar(el('viz'));
+// El medidor cachea su color: al cambiar el tema hay que invalidarlo.
+Tema.iniciar(() => Viz.refrescar());
 cuadro = requestAnimationFrame(animar);
 window.api.onEngineStatus(estadoEngine);
 window.api.engineStatus().then(estadoEngine);
