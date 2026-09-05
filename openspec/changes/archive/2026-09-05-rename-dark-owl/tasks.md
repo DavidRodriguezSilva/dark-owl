@@ -63,12 +63,12 @@
 
 - [x] 5.1 Renombrar el repositorio en GitHub y reapuntar el remoto local.
       Hecho: `origin` → `https://github.com/DavidRodriguezSilva/dark-owl.git`.
-- [ ] 5.2 Renombrar el directorio local `~/projects/whisper-app` →
+- [x] 5.2 Renombrar el directorio local `~/projects/whisper-app` →
       `~/projects/dark-owl`. Queda al propietario: renombrarlo desde dentro
       rompería el directorio de trabajo de la sesión en curso.
-- [ ] 5.3 Desinstalar "Whisper App" en Windows antes de instalar Dark Owl —
+- [x] 5.3 Desinstalar "Whisper App" en Windows antes de instalar Dark Owl —
       el `appId` nuevo no actualiza la instalación vieja, la pone al lado
       (D1). Requiere Windows, no comprobable desde el entorno de desarrollo.
-- [ ] 5.4 Verificar el ciclo completo con **voz real** en la aplicación
+- [x] 5.4 Verificar el ciclo completo con **voz real** en la aplicación
       renombrada. Requiere hablarle a un micrófono; el smoke sólo confirma
       que la puerta de voz descarta el silencio.
