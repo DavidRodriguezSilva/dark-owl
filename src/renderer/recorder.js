@@ -15,6 +15,9 @@ const MS_BARRA = 70;
 
 const Recorder = {
   stream: null,
+  // Se anota qué pasó al abrir el micrófono para que la UI pueda avisar: una
+  // sustitución muda no se distingue de una mala transcripción.
+  aviso: '',
   ctx: null,
   chunks: [],
   niveles: [], // últimos valores para el medidor de la UI
@@ -35,19 +38,54 @@ const Recorder = {
     return this.msPrevios + (this.capturando ? Date.now() - this.inicioTramo : 0);
   },
 
-  async iniciar() {
+  /** Sólo entradas de audio, en el orden que las dé el navegador. */
+  async dispositivos() {
+    try {
+      const todos = await navigator.mediaDevices.enumerateDevices();
+      return todos.filter((d) => d.kind === 'audioinput');
+    } catch {
+      return [];
+    }
+  },
+
+  _restricciones(id) {
+    const audio = {
+      channelCount: 1,
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true,
+    };
+    // `exact` y no `ideal` a propósito: sólo `exact` falla de forma detectable
+    // cuando el dispositivo ya no está. Con `ideal` el navegador sustituye por
+    // su cuenta y nadie se entera.
+    if (id) audio.deviceId = { exact: id };
+    return { audio };
+  },
+
+  /**
+   * @param {{id: string, etiqueta: string}} [guardado] dispositivo preferido
+   */
+  async iniciar(guardado) {
     this.chunks = [];
     this.niveles = [];
     this.msPrevios = 0;
+    this.aviso = '';
 
-    this.stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        channelCount: 1,
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-      },
-    });
+    const elegido = resolver(guardado, await this.dispositivos());
+    if (elegido.sustituido && elegido.falta) {
+      this.aviso = `el micrófono «${elegido.falta}» no está; se grabó con ${elegido.etiqueta || 'el del sistema'}`;
+    }
+
+    try {
+      this.stream = await navigator.mediaDevices.getUserMedia(this._restricciones(elegido.id));
+    } catch (err) {
+      // Entre resolver y abrir cabe una desconexión. Se graba igualmente —nunca
+      // dejar al usuario sin poder grabar— pero se dice.
+      if (!elegido.id || err.name !== 'OverconstrainedError') throw err;
+      this.aviso = `el micrófono «${elegido.etiqueta || elegido.id}» no está; se grabó con el del sistema`;
+      this.stream = await navigator.mediaDevices.getUserMedia(this._restricciones(''));
+    }
+    this.elegido = elegido;
 
     this.ctx = new AudioContext({ sampleRate: TASA });
     await this.ctx.audioWorklet.addModule('pcm-worklet.js');

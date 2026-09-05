@@ -91,9 +91,20 @@ herramientas — copiar, reprocesar el último audio sin volver a grabar, y
 limpiar. Al limpiar vuelve a plegarse a la franja.
 
 Los ajustes viven en su **propia ventana**, no dentro de la tira: van a crecer
-—micrófono, transcripción, glosario— y la tira no. Abrirlos no toca la ventana
-principal, así que se puede seguir grabando con ellos abiertos. Hoy llevan el
-esquema de color: claro, oscuro o seguir al del sistema, que es lo de serie.
+—transcripción, glosario— y la tira no. Abrirlos no toca la ventana principal,
+así que se puede seguir grabando con ellos abiertos. Hoy llevan:
+
+- **Apariencia**: claro, oscuro o seguir al del sistema, que es lo de serie.
+- **Entrada**: qué micrófono usar, con un botón para volver a buscarlos y otro
+  para **probar** el elegido — abre el micrófono unos segundos y enseña el
+  nivel real, que es la única forma de distinguir un micrófono mal elegido de
+  una voz demasiado baja. Se cierra solo.
+
+Del micrófono se guarda el identificador **y el nombre**. Si al grabar no está,
+se graba con el primero de la lista **avisando y diciendo cuál falta** — nunca
+en silencio: una transcripción capturada del micrófono equivocado no se
+distingue de una mala transcripción. La elección no se borra, así que volver a
+enchufarlo la readopta sin reconfigurar nada.
 
 Se redimensiona arrastrando el borde derecho, el inferior o la esquina.
 Plegada sólo se ensancha —no tendría sentido alargar una franja vacía—; con el
@@ -117,6 +128,7 @@ la app funciona sin red.
 
 ```bash
 pnpm run prueba:ajustes  # lógica del fichero de preferencias, en Node
+pnpm run prueba:microfono # resolución del dispositivo de entrada, en Node
 pnpm run smoke           # el ciclo completo, con la app abierta de verdad
 pnpm run smoke:motor     # el ciclo de vida de whisper-server
 pnpm run smoke:ajustes   # ventana de ajustes, persistencia y tema
@@ -147,6 +159,7 @@ src/main/paths.js      rutas de engine y modelo, en desarrollo y empaquetado
 src/main/ajustes.js    fichero de preferencias: defectos, validación y guardado
 src/preload/           puente contextBridge; única superficie visible del renderer
 src/renderer/          UI, captura de audio, worklet PCM y medidor de nivel
+src/renderer/microfono.js  resolución del dispositivo elegido (lógica pura)
 src/renderer/ajustes.html  ventana de ajustes, aparte de la tira
 scripts/               setup-whisper.js — compila el engine y baja el modelo
 vendor/                engine compilado + modelos (nunca versionado)

@@ -62,6 +62,7 @@ src/main/paths.js      rutas de engine y modelo, en desarrollo y empaquetado
 src/main/ajustes.js    preferencias: defectos, validación y guardado atómico
 src/preload/           puente contextBridge; única superficie visible del renderer
 src/renderer/          UI, captura de audio, worklet PCM y medidor de nivel
+src/renderer/microfono.js  resolución del dispositivo de entrada (lógica pura)
 src/renderer/ajustes.html  ventana de ajustes, aparte de la tira principal
 scripts/               setup-whisper.js (compila el engine), icono.js, smokes
 docs/                  notas de diseño y referencia
@@ -124,6 +125,14 @@ re-litigar sin motivo nuevo.**
   valida **al cargar**: un valor no admitido cae a su defecto y un fichero que
   no parsea equivale a no tener fichero. Un ajuste inválido nunca puede
   impedir que la app abra.
+- **Micrófono**: se guarda `{ id, etiqueta }`. Una única regla de resolución,
+  compartida por los ajustes y la grabación (`src/renderer/microfono.js`, puro
+  y probado en Node): id guardado → misma etiqueta → primero de la lista. Caer
+  al primero **no** borra la preferencia, para que el dispositivo se readopte
+  al volver. Se abre con `deviceId: { exact }` y no `ideal`, a propósito: sólo
+  `exact` falla de forma detectable, y una sustitución muda no se distingue de
+  una mala transcripción. El `groupId` **no** se persiste ni sirve para
+  emparejar: cambia entre ventanas, es por contexto de renderer.
 - **Ventana de ajustes aparte**, no un panel dentro de la tira: su contenido va
   a crecer (micrófono, transcripción, glosario) y la tira no. Es única —el
   engranaje enfoca la existente— y no altera la ventana principal.
@@ -167,6 +176,7 @@ Dos smokes con la app real, porque hay cosas que ninguna prueba unitaria ve:
 
 - `pnpm run prueba:ajustes` — lógica del fichero de preferencias, en Node sin
   Electron por medio.
+- `pnpm run prueba:microfono` — la resolución del dispositivo, en Node.
 - `pnpm run smoke:ajustes` — con el proceso main real: que el engranaje abre
   una sola ventana, que el ajuste llega al disco y que el cambio de tema
   alcanza a la otra ventana y al medidor.
