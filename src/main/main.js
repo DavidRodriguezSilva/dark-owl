@@ -29,7 +29,7 @@ function createWindow() {
   win = new BrowserWindow({
     width: ANCHO,
     height: ALTO_PLEGADO,
-    title: 'Whisper App',
+    title: 'Dark Owl',
     icon: path.join(__dirname, '..', '..', 'assets', 'icon.png'),
     // Sin marco del sistema: la barra de título la pinta el renderer.
     // Sin transparencia a propósito: con ella las esquinas redondeadas se veían

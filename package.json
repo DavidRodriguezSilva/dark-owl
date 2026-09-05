@@ -1,6 +1,6 @@
 {
-  "name": "whisper-app",
-  "productName": "Whisper App",
+  "name": "dark-owl",
+  "productName": "Dark Owl",
   "version": "0.1.0",
   "private": true,
   "description": "Grabadora minimalista de voz a texto, 100% offline, sobre whisper.cpp. Grabar, pausar, detener, transcribir, limpiar, reprocesar.",
@@ -25,8 +25,8 @@
     "electron-builder": "^26.0.12"
   },
   "build": {
-    "appId": "app.whisper.mini",
-    "productName": "Whisper App",
+    "appId": "forest.dark.owl",
+    "productName": "Dark Owl",
     "directories": {
       "output": "release"
     },

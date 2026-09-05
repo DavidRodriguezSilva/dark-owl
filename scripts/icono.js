@@ -26,32 +26,53 @@ if (process.platform === 'linux') {
 }
 
 /**
- * A 16 o 24 píxeles las barras del medidor se convierten en papilla, así que
- * los tamaños pequeños se quedan sólo con el punto de grabar.
+ * A 16 o 24 píxeles no cabe un ave, cabe una silueta: el cuerpo y los penachos
+ * se convierten en papilla y sólo sobreviven los ojos. Por eso hay dos
+ * variantes — la completa para 40 px en adelante y una de sólo ojos, más
+ * grandes, para los tamaños pequeños.
  *
- * Las dos variantes se pintan en la MISMA página, una encima de otra, y se
- * capturan por regiones. Crear varias ventanas transparentes seguidas bajo
- * WSLg falla: la segunda `loadURL` devuelve ERR_FAILED.
+ * Las dos se pintan en la MISMA página, una encima de otra, y se capturan por
+ * regiones. Crear varias ventanas transparentes seguidas bajo WSLg falla: la
+ * segunda `loadURL` devuelve ERR_FAILED.
  */
 const BASE = 512;
 
-function bloque(lado, conBarras) {
-  const radio = Math.round(lado * (conBarras ? 0.145 : 0.3));
-  const hueco = Math.max(1, Math.round(lado * 0.055));
-  const grueso = Math.max(1, Math.round(lado * 0.035));
-  const separacion = Math.max(1, Math.round(lado * 0.027));
-  const barras = [0.10, 0.23, 0.34, 0.17, 0.08]
-    .map((alto, i) => {
-      const color = ['#5d6480', '#828aa6', '#f2f4f9', '#828aa6', '#5d6480'][i];
-      return `<i style="height:${Math.round(alto * lado)}px;background:${color};width:${grueso}px;border-radius:${grueso}px"></i>`;
-    })
-    .join('');
+// El búho se dibuja en SVG y no con divs: una silueta con penachos no sale de
+// componer rectángulos con border-radius.
+function buho(conCuerpo) {
+  const ojo = conCuerpo ? 12.5 : 17;
+  const pupila = conCuerpo ? 6 : 8;
+  const cy = conCuerpo ? 44 : 46;
+  const cx = conCuerpo ? 35 : 32;
 
+  // Cabeza y cuerpo en un solo trazo, con los dos penachos arriba.
+  const cuerpo = conCuerpo
+    ? `<path d="M20 9 L39 19 C43 17.5 46.5 17 50 17 C53.5 17 57 17.5 61 19 L80 9
+         L78 31 C81.5 36.5 83 42.5 83 49 C83 72 68 89 50 89
+         C32 89 17 72 17 49 C17 42.5 18.5 36.5 22 31 Z" fill="url(#plumas)"/>`
+    : '';
+
+  const pico = conCuerpo ? 'M45.5 50 L54.5 50 L50 64 Z' : 'M44.5 54 L55.5 54 L50 70 Z';
+
+  return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="plumas" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#4a5370"/>
+        <stop offset="1" stop-color="#252a39"/>
+      </linearGradient>
+    </defs>
+    ${cuerpo}
+    <circle cx="${cx}" cy="${cy}" r="${ojo}" fill="#f2f4f9"/>
+    <circle cx="${100 - cx}" cy="${cy}" r="${ojo}" fill="#f2f4f9"/>
+    <circle cx="${cx}" cy="${cy}" r="${pupila}" fill="#12141b"/>
+    <circle cx="${100 - cx}" cy="${cy}" r="${pupila}" fill="#12141b"/>
+    <path d="${pico}" fill="#f0b429"/>
+  </svg>`;
+}
+
+function bloque(lado, conCuerpo) {
   return `<div class="placa" style="width:${lado}px;height:${lado}px;border-radius:${Math.round(lado * 0.22)}px">
-    <div class="grupo" style="gap:${hueco}px">
-      <span class="punto" style="width:${radio * 2}px;height:${radio * 2}px"></span>
-      ${conBarras ? `<span class="barras" style="gap:${separacion}px">${barras}</span>` : ''}
-    </div>
+    <span class="ave" style="width:${Math.round(lado * 0.74)}px;height:${Math.round(lado * 0.74)}px">${buho(conCuerpo)}</span>
   </div>`;
 }
 
@@ -60,10 +81,8 @@ function pagina(lado) {
 <style>
   html, body { margin: 0; background: transparent; }
   .placa { display: grid; place-items: center; background: linear-gradient(160deg, #232735, #0d0e13); }
-  .grupo { display: flex; align-items: center; }
-  .punto { border-radius: 50%; background: #f0483c; }
-  .barras { display: flex; align-items: center; }
-  .barras i { display: block; }
+  .ave { display: block; }
+  .ave svg { display: block; width: 100%; height: 100%; }
 </style>
 ${bloque(lado, true)}
 ${bloque(lado, false)}
@@ -122,16 +141,16 @@ app.whenReady().then(async () => {
   await new Promise((r) => setTimeout(r, 400));
 
   const region = (y) => win.webContents.capturePage({ x: 0, y, width: BASE, height: BASE });
-  const conBarras = (await region(0)).toPNG();
-  const sinBarras = (await region(BASE)).toPNG();
+  const conCuerpo = (await region(0)).toPNG();
+  const soloOjos = (await region(BASE)).toPNG();
   win.destroy();
 
-  fs.writeFileSync(path.join(ASSETS, 'icon.png'), conBarras);
-  console.log(`icon.png  ${BASE}x${BASE}  ${conBarras.length} bytes`);
+  fs.writeFileSync(path.join(ASSETS, 'icon.png'), conCuerpo);
+  console.log(`icon.png  ${BASE}x${BASE}  ${conCuerpo.length} bytes`);
 
   const imagenes = MEDIDAS_ICO.map((lado) => ({
     lado,
-    png: reescalar(lado >= 40 ? conBarras : sinBarras, lado),
+    png: reescalar(lado >= 40 ? conCuerpo : soloOjos, lado),
   }));
 
   const ico = empaquetarIco(imagenes);

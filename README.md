@@ -1,4 +1,4 @@
-# Whisper App
+# dark-owl
 
 Grabadora minimalista de **voz a texto, 100% offline**, sobre
 [whisper.cpp](https://github.com/ggml-org/whisper.cpp).
@@ -12,6 +12,10 @@ grabar → pausar/reanudar → detener → esperar → texto
 ```
 
 Sin cuentas, sin nube, sin telemetría. El audio nunca sale de tu máquina.
+
+El búho oye en la oscuridad y escribe lo que oyó. Forma parte de
+**DarkForest**, la familia a la que también pertenece
+[dark-echo](https://github.com/DavidRodriguezSilva/dark-echo).
 
 ## Por qué existe
 
@@ -68,7 +72,7 @@ En reposo la ventana es una sola franja, al estilo del Winamp pequeño: contador
 los tres mandos y el medidor de nivel, todo en la misma línea.
 
 ```
-● WHISPER                                          –  ✕
+● DARK OWL                                         –  ✕
  00:00   ( ● ) ( ⏸ ) ( ■ )   ▁▃▅▂▆▃▁▅▂▄▇▃▁▅▂
 ```
 
@@ -195,8 +199,10 @@ qué esperar de SmartScreen con un `.exe` sin firmar.
 ## Cómo se trabaja este repo
 
 Los cambios se planifican con [OpenSpec](https://github.com/Fission-AI/OpenSpec)
-antes de escribirse. El contexto del proyecto y las reglas de cada artefacto
-viven en [`openspec/config.yaml`](openspec/config.yaml).
+antes de escribirse. El contexto largo del proyecto está en
+[`openspec/project.md`](openspec/project.md); el resumen que se inyecta en
+cada artefacto y las reglas de propuesta, diseño y tareas, en
+[`openspec/config.yaml`](openspec/config.yaml).
 
 ## Licencia
 

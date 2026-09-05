@@ -1,117 +1,72 @@
 schema: spec-driven
 
 context: |
-  # Whisper App
+  Producto: `dark-owl`, grabadora minimalista de voz a texto 100% offline
+  sobre whisper.cpp. Una ventana pequeña, un solo ciclo: grabar →
+  pausar/reanudar → detener → esperar transcripción → texto → limpiar o
+  reprocesar. Audios cortos, sin cuentas, sin nube, sin telemetría. Parte de
+  la familia DarkForest, junto a dark-echo. Ver `openspec/project.md` para el
+  contexto completo — propósito, stack, decisiones ya tomadas, layout,
+  convenciones y verificación — y `docs/referencia-whisperpress.md` para el
+  porqué de cada decisión de audio y sus calibraciones.
 
-  Grabadora minimalista de voz a texto, 100% offline, sobre whisper.cpp.
+  Fuera de alcance: hotkeys globales, inyección de texto en otras apps,
+  historial de notas, importar audio, capturar audio del sistema, resúmenes
+  con LLM, traducción, i18n. El norte es "súper pequeña, súper minimalista".
 
-  ## Producto
-  Una sola ventana pequeña (no pantalla completa). Ciclo único:
-  grabar → pausar/reanudar → detener → esperar transcripción → texto a la vista
-  → limpiar o reprocesar → volver a grabar.
-  Pensada para audios cortos. Sin cuentas, sin nube, sin telemetría.
+  Stack: Electron (main/preload/renderer) con HTML+CSS+JS plano, sin
+  framework, sin bundler, sin TypeScript; `contextIsolation: true` y el
+  renderer limitado a `window.api`; whisper.cpp compilado desde fuente vía
+  CMake a `vendor/`; pnpm; cero dependencias en runtime. Cross-platform
+  Linux + Windows, desarrollado y probado en Linux/WSL2.
 
-  Fuera de alcance por ahora: hotkeys globales, inyección de texto en otras apps,
-  historial de notas, importar archivos de audio, grabación de audio del sistema,
-  resúmenes con LLM, traducción, i18n. Si algo de eso se propone, debe
-  justificarse contra "súper pequeña, súper minimalista".
+  El engine se compila desde fuente porque los releases sin firmar de
+  whisper.cpp y de apps Electron similares los marcan SmartScreen y los
+  antivirus. Nunca se versiona ni se descarga un binario de terceros.
 
-  ## Por qué compilamos desde fuente
-  Los releases de whisper.cpp y de apps Electron similares (p. ej. WhisperPress)
-  vienen sin firmar y SmartScreen/antivirus los marcan como amenaza — falso
-  positivo, pero bloquea el uso. Aquí el engine se compila localmente con
-  `npm run setup` y nunca se versiona un binario de terceros.
+  "whisper" nombra al motor (`whisper.cpp`, `whisper-server`,
+  `setup-whisper.js`); el producto es `dark-owl`. No fundir ambos.
 
-  ## Stack
-  - Electron (main / preload / renderer), HTML + CSS + JS plano. Sin frameworks
-    de UI, sin bundler, sin TypeScript.
-  - `contextIsolation: true`, `nodeIntegration: false`. El renderer sólo ve la
-    superficie que `src/preload/preload.js` expone en `window.api`.
-  - whisper.cpp compilado desde fuente vía CMake. Modelo por defecto: **small**
-    (`ggml-small.bin`). CUDA opcional (`npm run setup:cuda`).
-  - Cross-platform Linux + Windows. Se desarrolla y prueba en Linux/WSL2 (WSLg,
-    micrófono vía PulseAudio); Windows no se puede probar desde el entorno de
-    desarrollo, así que el código no asume APIs de una sola plataforma.
+  Ninguna llamada de red en runtime; la red sólo se toca en `pnpm run setup`.
+  Excepción: `127.0.0.1` contra nuestro propio `whisper-server`.
 
-  ## Decisiones técnicas ya tomadas
-  Salen de leer WhisperPress; el detalle y el porqué están en
-  `docs/referencia-whisperpress.md`. No re-litigar sin motivo nuevo.
-
-  - **Captura**: `AudioContext({ sampleRate: 16000 })` + `AudioWorklet` que
-    postea `Float32Array`. Nada de `MediaRecorder`, nada de ffmpeg.
-  - **Codificación**: WAV escrito a mano — cabecera RIFF de 44 bytes + PCM
-    `Int16` LE mono a 16 kHz. Es el formato que whisper.cpp consume directo.
-  - **Al detener**: esperar ~140 ms antes de cerrar el `AudioContext`, o se
-    pierden los últimos mensajes del worklet (y las últimas sílabas). Después,
-    parar las pistas del stream *y* cerrar el contexto.
-  - **Pausa**: bandera que deja de acumular chunks, sin cerrar el contexto —
-    reanudar es instantáneo y no vuelve a pedir permiso de micrófono.
-  - **Motor**: `whisper-server` levantado al abrir la app y mantenido caliente;
-    se transcribe con `POST /inference` (`FormData` + `response_format=verbose_json`).
-    Con clips cortos el tiempo de carga del modelo domina, así que recargarlo por
-    transcripción (`whisper-cli`) no es opción.
-  - **Arranque del servidor**: puerto libre vía `net.createServer().listen(0)`;
-    el socket sólo abre tras cargar el modelo, así que se sondea con `fetch`
-    cada 300 ms hasta que responda.
-  - **Flags obligatorias**: `whisper-server` decodifica *greedy* por defecto y
-    pierde calidad frente al CLI. Pasar siempre `-bs 5 -bo 5`.
-  - **Hilos**: `max(2, min(8, cpus/2))`.
-  - **Post-proceso**: quitar marcadores de no-habla (`[BLANK_AUDIO]`, `(music)`,
-    `♪`) y unir los saltos de línea por segmento en texto corrido. Descartar
-    audios de menos de ~350 ms sin llamar al motor.
-  - **Descargas**: escribir a `<dest>.part` y renombrar al terminar, para que una
-    descarga cortada no deje un modelo corrupto que parece válido.
-  - **Puerta de voz** (nuestra, WhisperPress no la tiene): whisper no se calla
-    ante el silencio, devuelve texto inventado y a veces en otro alfabeto. Antes
-    de llamar al motor, `src/renderer/nivel.js` mide qué proporción de los tramos
-    de 100 ms supera un umbral de energía; por debajo de 0,10 no se transcribe.
-    Ni el pico ni el RMS global sirven: un chasquido al abrir el micrófono ya
-    alcanza un pico de 0,4, y el RMS global se diluye con las pausas del habla.
-    Los dos umbrales (0,04 por tramo, 0,10 de proporción) salen de un barrido
-    contra habla real; están tabulados en docs/referencia-whisperpress.md. Si
-    hay que reajustarlos, repetir el barrido — no moverlos a ojo.
-
-  ## Layout
-    src/main/       proceso principal: ventana, IPC, engine, rutas
-    src/preload/    puente contextBridge, única superficie del renderer
-    src/renderer/   UI: index.html, app.css, app.js
-    scripts/        setup-whisper.js — compila engine + descarga modelo
-    docs/           notas de diseño y referencia
-    vendor/         engine y modelos locales (git-ignored, nunca versionar)
-
-  ## Convenciones
-  - Commits convencionales (`feat:`, `fix:`, `docs:`, `chore:`).
-  - CommonJS (`require`) en main/preload; `'use strict'` al tope de cada archivo.
-  - Indentación de 2 espacios, comillas simples, punto y coma.
-  - Comentarios en español y sólo donde expliquen un *porqué*, no un *qué*.
-  - Nada de dependencias en runtime salvo que haya una razón fuerte; hoy el
-    árbol de producción es cero-dependencias.
-  - Ninguna llamada de red en runtime. La red sólo se toca en `npm run setup`.
-    Excepción: `127.0.0.1` contra nuestro propio `whisper-server`.
+  Convención de commits: mensajes en español, imperativo, estilo Conventional
+  Commits (`feat: ...`), sin firma manual además del `Co-Authored-By` que
+  añade la herramienta.
 
 rules:
   proposal:
     - Cada propuesta debe justificarse contra el alcance minimalista; si añade
       superficie de UI, decir explícitamente qué se saca o por qué cabe.
     - Incluir siempre una sección "Fuera de alcance".
-    - Si algo ya está resuelto en "Decisiones técnicas ya tomadas", referenciarlo
-      en vez de volver a decidirlo.
+    - Si algo ya está resuelto en las "Decisiones técnicas ya tomadas" de
+      `project.md`, referenciarlo en vez de volver a decidirlo.
   design:
     - Indicar qué corre en main y qué en renderer, y qué canal IPC los une.
     - Toda API nueva expuesta al renderer se lista explícitamente, con su forma.
-    - Señalar si introduce una dependencia en runtime y por qué no se puede evitar.
+    - Señalar si introduce una dependencia en runtime y por qué no se puede
+      evitar.
+    - Un ajuste que sólo cambie parámetros aceptados por petición en
+      `POST /inference` debe decirlo: no requiere reiniciar el motor, y
+      proponer un reinicio sería un coste inventado.
   tasks:
     - Trocear en tareas de máximo 2 horas.
     - La última tarea de cada cambio es verificarlo con la app corriendo
-      (`npm start`), no sólo con pruebas.
+      (`pnpm start`), no sólo con pruebas.
+    - Las tareas que dependan de hardware o de un sistema que no se puede
+      probar desde el entorno de desarrollo (micrófonos reales, Windows,
+      SmartScreen) se marcan como manuales del propietario en vez de darse por
+      completas con una aproximación.
 
 operations:
   apply:
     guidance:
       - Verificar sintaxis con `node --check` en los archivos JS tocados.
       - No versionar nada bajo `vendor/`.
-      - Al tocar audio, probar el ciclo completo con voz real: el silencio y los
-        clips de menos de un segundo son los que rompen.
+      - Al tocar audio, probar el ciclo completo con voz real: el silencio y
+        los clips de menos de un segundo son los que rompen.
+      - Si se tocan los umbrales de la puerta de voz, repetir el barrido contra
+        habla real; no moverlos a ojo.
   archive:
     guidance:
       - Resumir en una línea qué quedó fuera de alcance y por qué.

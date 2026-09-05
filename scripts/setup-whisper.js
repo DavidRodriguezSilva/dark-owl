@@ -117,7 +117,7 @@ function download(url, dest) {
     const file = fs.createWriteStream(part);
 
     https
-      .get(url, { headers: { 'User-Agent': 'whisper-app-setup' } }, (res) => {
+      .get(url, { headers: { 'User-Agent': 'dark-owl-setup' } }, (res) => {
         if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
           file.close();
           fs.rmSync(part, { force: true });
