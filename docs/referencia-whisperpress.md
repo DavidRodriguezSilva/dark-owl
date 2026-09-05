@@ -56,7 +56,7 @@ reanudar es instantáneo y no vuelve a pedir permiso de micrófono).
 | Coste | proceso **caliente**: el modelo queda cargado en RAM | recarga el modelo en cada invocación |
 | Salida | JSON al final | segmentos en streaming (regex sobre `[hh:mm:ss.mmm --> …]`) |
 
-**Decisión para Whisper App: `whisper-server` caliente.** Con audios cortos el
+**Decisión para dark-owl: `whisper-server` caliente.** Con audios cortos el
 tiempo de carga del modelo domina — cargar `small` puede costar más que
 transcribir 10 segundos de voz. Arrancar el servidor al abrir la app y dejarlo
 vivo convierte "detener → texto" en algo casi inmediato.
