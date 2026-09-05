@@ -66,14 +66,27 @@ cabe el umbral.
   El dictado real está lleno de pausas para pensar a mitad de frase; son
   exactamente las que no deben crear párrafo.
 
-- **D3 — Umbral por defecto de 600 ms, y ajustable.** Cae en el centro de la
-  banda vacía medida (0,20 s – 0,73 s), así que ni parte por separaciones
-  normales ni se pierde las pausas de verdad.
+- **D3 — Umbral por defecto de 600 ms, y ajustable.** Confirmado contra
+  **seis minutos de mensajes de voz en español de hablantes nativos**, que es
+  lo que hacía falta: la primera medición era una sola muestra en inglés de un
+  orador entrenado.
 
-  Se declara la limitación: **una muestra, en inglés, de un orador entrenado**.
-  El dictado propio en español puede repartirse distinto. Por eso el umbral es
-  un ajuste y no una constante — que es además lo que se pidió: un valor por
-  defecto que se pueda mover.
+  | Hueco | Total | Tras fin de frase | A mitad de frase |
+  |---|---|---|---|
+  | 0 – 0,2 s | 1463 | 66 | **1397** |
+  | 0,2 – 0,4 s | 22 | 6 | 16 |
+  | **0,4 – 1,0 s** | **0** | 0 | 0 |
+  | > 1,0 s | 5 | **5** | **0** |
+
+  La banda vacía en español es aún más ancha que en inglés —de 0,4 s a 1,0 s no
+  hay ni un valor— y los 600 ms caen en su centro. A 0,3 s la regla de sólo
+  pausa ya produciría tres cortes falsos («España | Portugal», «, | entonces»,
+  «subir | un»).
+
+  Matiz honesto: en esa muestra las pausas largas son **saltos entre mensajes**
+  distintos, no pausas dentro de un monólogo. Así que valida bien el límite
+  inferior —no se corta de más— y menos el superior. Por eso sigue siendo un
+  ajuste y no una constante, que es además lo que se pidió.
 
 - **D4 — El idioma por defecto pasa de `auto` a español.** Es un cambio de
   comportamiento deliberado, no un efecto colateral. Con clips cortos la

@@ -16,6 +16,7 @@
     "setup:cuda": "node scripts/setup-whisper.js --cuda",
     "prueba:ajustes": "node scripts/prueba-ajustes.js",
     "prueba:microfono": "node scripts/prueba-microfono.js",
+    "prueba:texto": "node scripts/prueba-texto.js",
     "icono": "electron scripts/icono.js",
     "iconos": "node scripts/iconos.js",
     "pack": "electron-builder --dir",

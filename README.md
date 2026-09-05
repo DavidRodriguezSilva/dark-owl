@@ -95,6 +95,9 @@ Los ajustes viven en su **propia ventana**, no dentro de la tira: van a crecer
 así que se puede seguir grabando con ellos abiertos. Hoy llevan:
 
 - **Apariencia**: claro, oscuro o seguir al del sistema, que es lo de serie.
+- **Transcripción**: idioma —español por defecto, no detección automática—,
+  formato del texto (corrido, una frase por línea o párrafos) y el umbral de
+  pausa que separa párrafos.
 - **Entrada**: qué micrófono usar, con un botón para volver a buscarlos y otro
   para **probar** el elegido — abre el micrófono unos segundos y enseña el
   nivel real, que es la única forma de distinguir un micrófono mal elegido de
@@ -110,6 +113,12 @@ Se redimensiona arrastrando el borde derecho, el inferior o la esquina.
 Plegada sólo se ensancha —no tendría sentido alargar una franja vacía—; con el
 texto desplegado es libre, y recuerda el alto que le dejaste para la próxima vez
 que se despliegue.
+
+El texto sale en **párrafos**: se corta cuando coinciden final de oración y una
+pausa por encima del umbral. Las dos cosas, no sólo la pausa — al medir habla
+real, las pausas largas caen tanto entre oraciones como a mitad de una, para
+pensar o por énfasis, y cortar por pausa sola parte una sola frase en varios
+párrafos.
 
 Descarta por su cuenta lo que no vale la pena mandar al motor: menos de 350 ms, o
 audio por debajo del nivel de voz. Sin esa segunda comprobación whisper no se
@@ -129,6 +138,7 @@ la app funciona sin red.
 ```bash
 pnpm run prueba:ajustes  # lógica del fichero de preferencias, en Node
 pnpm run prueba:microfono # resolución del dispositivo de entrada, en Node
+pnpm run prueba:texto     # formato del transcrito, en Node
 pnpm run smoke           # el ciclo completo, con la app abierta de verdad
 pnpm run smoke:motor     # el ciclo de vida de whisper-server
 pnpm run smoke:ajustes   # ventana de ajustes, persistencia y tema
@@ -154,7 +164,7 @@ llega al disco, y que el cambio de tema alcanza a la otra ventana y al medidor
 ```
 src/main/main.js       ventana y manejadores IPC
 src/main/engine.js     ciclo de vida de whisper-server y POST /inference
-src/main/text.js       limpieza del transcrito
+src/main/text.js       limpieza y formato del transcrito (frases y párrafos)
 src/main/paths.js      rutas de engine y modelo, en desarrollo y empaquetado
 src/main/ajustes.js    fichero de preferencias: defectos, validación y guardado
 src/preload/           puente contextBridge; única superficie visible del renderer

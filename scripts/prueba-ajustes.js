@@ -29,6 +29,9 @@ prueba('sin fichero devuelve los valores por defecto', () => {
   assert.deepEqual(ajustes.leer(ruta), ajustes.porDefecto());
   assert.equal(ajustes.porDefecto().tema, 'sistema');
   assert.deepEqual(ajustes.porDefecto().microfono, { id: '', etiqueta: '' });
+  assert.equal(ajustes.porDefecto().idioma, 'es');
+  assert.equal(ajustes.porDefecto().formato, 'parrafos');
+  assert.equal(ajustes.porDefecto().pausaParrafo, 600);
 });
 
 prueba('los defectos que son objeto no se comparten entre llamadas', () => {
@@ -89,6 +92,25 @@ prueba('un campo inválido no arrastra a los demás', () => {
   const leido = ajustes.leer(ruta);
   assert.equal(leido.tema, 'claro');
   assert.deepEqual(leido.microfono, { id: '', etiqueta: '' });
+});
+
+prueba('un umbral de pausa válido se conserva', () => {
+  fs.writeFileSync(ruta, JSON.stringify({ version: 1, pausaParrafo: 900 }));
+  assert.equal(ajustes.leer(ruta).pausaParrafo, 900);
+});
+
+prueba('un umbral fuera de rango, no entero o no numérico cae al defecto', () => {
+  for (const malo of [199, 3001, 600.5, '600', null, NaN, {}]) {
+    fs.writeFileSync(ruta, JSON.stringify({ version: 1, pausaParrafo: malo }));
+    assert.equal(ajustes.leer(ruta).pausaParrafo, 600, `no cayó al defecto con ${JSON.stringify(malo)}`);
+  }
+});
+
+prueba('los límites del rango sí se admiten', () => {
+  for (const bueno of [200, 3000]) {
+    fs.writeFileSync(ruta, JSON.stringify({ version: 1, pausaParrafo: bueno }));
+    assert.equal(ajustes.leer(ruta).pausaParrafo, bueno);
+  }
 });
 
 prueba('guardar escribe y leer lo recupera', () => {

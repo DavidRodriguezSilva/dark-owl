@@ -26,7 +26,7 @@ const SIN_LIMITE = 10000;
 // La ventana de ajustes es aparte porque su contenido crece —micrófono,
 // transcripción, glosario— y la tira no.
 const AJUSTES_ANCHO = 440;
-const AJUSTES_ALTO = 250;
+const AJUSTES_ALTO = 360;
 
 // Fondo que Electron pinta antes de que el renderer dibuje. Con el tema claro,
 // dejarlo oscuro produce un destello en cada arranque.
@@ -202,8 +202,17 @@ ipcMain.on('ui:cerrar', (event) => BrowserWindow.fromWebContents(event.sender)?.
 
 ipcMain.handle('transcribe', async (_event, wav) => {
   try {
-    const { text: crudo, language } = await engine.transcribe(Buffer.from(wav));
-    return { text: text.limpiar(crudo), language };
+    const config = ajustes.leer();
+    const { text: crudo, language, palabras } = await engine.transcribe(Buffer.from(wav), {
+      idioma: config.idioma,
+    });
+    return {
+      text: text.formatear(crudo, palabras, {
+        formato: config.formato,
+        pausaParrafo: config.pausaParrafo,
+      }),
+      language,
+    };
   } catch (err) {
     return { error: String(err.message || err) };
   }

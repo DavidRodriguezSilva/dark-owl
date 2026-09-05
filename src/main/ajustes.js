@@ -22,6 +22,17 @@ const CAMPOS = {
     // si Chromium le cambia el número.
     valida: (v) => Boolean(v) && typeof v.id === 'string' && typeof v.etiqueta === 'string',
   },
+  // 'auto' detecta el idioma en cada clip. Con audios cortos la detección falla
+  // y whisper acaba traduciendo o inventando, así que el defecto es concreto.
+  idioma: { admitidos: ['auto', 'es', 'en', 'pt', 'fr', 'de', 'it'], defecto: 'es' },
+  formato: { admitidos: ['corrido', 'frases', 'parrafos'], defecto: 'parrafos' },
+  pausaParrafo: {
+    defecto: 600,
+    // Entero en milisegundos. El rango acota lo que tiene sentido: por debajo
+    // de 200 ms se parte por separaciones normales entre palabras, y por encima
+    // de 3 s no queda pausa que detectar.
+    valida: (v) => Number.isInteger(v) && v >= 200 && v <= 3000,
+  },
 };
 
 function esValido(campo, valor) {

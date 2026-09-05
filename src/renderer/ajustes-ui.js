@@ -5,12 +5,23 @@ const grupoTema = el('tema');
 const selector = el('mic');
 const nota = el('micNota');
 const btnProbar = el('probar');
+const selIdioma = el('idioma');
+const grupoFormato = el('formato');
+const rangoPausa = el('pausa');
+const valorPausa = el('pausaVal');
+const filaPausa = el('filaPausa');
 
 // La prueba se cierra sola: tener el micrófono abierto mientras los ajustes
 // están a la vista encendería el indicador del sistema por nada.
 const PRUEBA_MS = 8000;
 
-let config = { tema: 'sistema', microfono: { id: '', etiqueta: '' } };
+let config = {
+  tema: 'sistema',
+  microfono: { id: '', etiqueta: '' },
+  idioma: 'es',
+  formato: 'parrafos',
+  pausaParrafo: 600,
+};
 let cuadro = 0;
 let reloj = 0;
 
@@ -31,6 +42,48 @@ grupoTema.addEventListener('click', async (e) => {
   Tema.aplicar(boton.dataset.valor);
   config = await window.api.ajustes.guardar({ tema: boton.dataset.valor });
   marcarTema(config.tema);
+});
+
+/* ---- transcripción ---- */
+
+function marcarGrupo(grupo, valor) {
+  for (const b of grupo.querySelectorAll('button')) {
+    b.setAttribute('aria-pressed', String(b.dataset.valor === valor));
+  }
+}
+
+/** El umbral sólo actúa con formato de párrafos; se deshabilita, no se esconde. */
+function pintarTranscripcion() {
+  selIdioma.value = config.idioma;
+  marcarGrupo(grupoFormato, config.formato);
+  rangoPausa.value = String(config.pausaParrafo);
+  valorPausa.textContent = `${config.pausaParrafo} ms`;
+  const aplica = config.formato === 'parrafos';
+  rangoPausa.disabled = !aplica;
+  filaPausa.classList.toggle('opcion--inerte', !aplica);
+}
+
+selIdioma.addEventListener('change', async () => {
+  config = await window.api.ajustes.guardar({ idioma: selIdioma.value });
+  pintarTranscripcion();
+});
+
+grupoFormato.addEventListener('click', async (e) => {
+  const boton = e.target.closest('button[data-valor]');
+  if (!boton) return;
+  marcarGrupo(grupoFormato, boton.dataset.valor);
+  config = await window.api.ajustes.guardar({ formato: boton.dataset.valor });
+  pintarTranscripcion();
+});
+
+// El texto sigue al arrastre; el guardado espera a soltar, para no escribir en
+// disco una vez por píxel.
+rangoPausa.addEventListener('input', () => {
+  valorPausa.textContent = `${rangoPausa.value} ms`;
+});
+rangoPausa.addEventListener('change', async () => {
+  config = await window.api.ajustes.guardar({ pausaParrafo: Number(rangoPausa.value) });
+  pintarTranscripcion();
 });
 
 /* ---- micrófono ---- */
@@ -128,10 +181,12 @@ Viz.pintar([], 'inicial');
 Tema.iniciar((nuevo) => {
   config = nuevo;
   marcarTema(nuevo.tema);
+  pintarTranscripcion();
   Viz.refrescar();
 }).then(async (inicial) => {
   config = inicial;
   marcarTema(inicial.tema);
+  pintarTranscripcion();
   await listar();
 });
 
