@@ -35,8 +35,8 @@ const opt = (name, fallback) => {
 
 const MODEL = opt('model', 'small');
 const CUDA = flag('cuda');
-// Por defecto reutilizamos un clon hermano en ../whisper.cpp; si no existe, lo creamos.
-const SRC = path.resolve(opt('src', path.join(ROOT, '..', 'whisper.cpp')));
+// Por defecto reutilizamos el clon de la familia en ../../ref/whisper.cpp; si no existe, lo creamos.
+const SRC = path.resolve(opt('src', path.join(ROOT, '..', '..', 'ref', 'whisper.cpp')));
 
 const log = (...a) => console.log('›', ...a);
 
