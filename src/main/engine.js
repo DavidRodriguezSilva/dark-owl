@@ -3,6 +3,7 @@
 const fs = require('node:fs');
 const os = require('node:os');
 const net = require('node:net');
+const http = require('node:http');
 const path = require('node:path');
 const { spawn } = require('node:child_process');
 const { EventEmitter } = require('node:events');
@@ -197,6 +198,48 @@ class Engine extends EventEmitter {
   }
 
   /**
+   * POST /inference sin caducidad. No va por fetch: undici aborta si las
+   * cabeceras tardan más de 300 s, y whisper-server no responde nada hasta
+   * acabar — un audio de 20 minutos tarda más que eso en CPU. El multipart lo
+   * sigue armando FormData; Request sólo se usa para serializarlo.
+   */
+  async _inferir(body) {
+    const url = `http://127.0.0.1:${this.port}/inference`;
+    const peticion = new Request(url, { method: 'POST', body });
+    const bytes = Buffer.from(await peticion.arrayBuffer());
+
+    return new Promise((resolve, reject) => {
+      const req = http.request(url, {
+        method: 'POST',
+        // Sin agente: el global de Node trae un timeout de socket de 5 s que
+        // podría cortar justo esta espera larga.
+        agent: false,
+        headers: {
+          'content-type': peticion.headers.get('content-type'),
+          'content-length': bytes.length,
+        },
+      }, (res) => {
+        const trozos = [];
+        res.on('data', (d) => trozos.push(d));
+        res.on('end', () => {
+          if (res.statusCode < 200 || res.statusCode >= 300) {
+            reject(new Error(`inferencia HTTP ${res.statusCode}`));
+            return;
+          }
+          try {
+            resolve(JSON.parse(Buffer.concat(trozos).toString('utf8')));
+          } catch {
+            reject(new Error('el motor devolvió una respuesta ilegible'));
+          }
+        });
+        res.on('error', reject);
+      });
+      req.on('error', reject);
+      req.end(bytes);
+    });
+  }
+
+  /**
    * @param {Buffer|Uint8Array} wav WAV PCM 16 kHz mono.
    * @param {{idioma?: string}} [opciones]
    */
@@ -218,10 +261,7 @@ class Engine extends EventEmitter {
     body.append('language', idioma === 'auto' ? 'auto' : idioma);
     if (idioma !== 'auto') body.append('no_language_probabilities', 'true');
 
-    const res = await fetch(`http://127.0.0.1:${this.port}/inference`, { method: 'POST', body });
-    if (!res.ok) throw new Error(`inferencia HTTP ${res.status}`);
-
-    const json = await res.json();
+    const json = await this._inferir(body);
     if (json.error) throw new Error(String(json.error));
 
     // Las palabras con sus tiempos son lo que permite saber dónde hubo una

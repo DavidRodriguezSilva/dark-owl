@@ -12,7 +12,8 @@ grabar → pausar/reanudar → detener → esperar transcripción → texto a la
 ```
 
 Pensada para audios cortos. Sin cuentas, sin nube, sin telemetría; el audio no
-sale de la máquina.
+sale de la máquina. Además del micrófono, admite **un archivo de audio** (hasta
+20 minutos), que entra por el mismo ciclo y sale en el mismo panel.
 
 Forma parte de la familia **DarkForest**, junto a
 [`dark-echo`](https://github.com/DavidRodriguezSilva/dark-echo): nombres
@@ -20,8 +21,8 @@ asociados a la oscuridad o al bosque, de modo que varias aplicaciones juntas
 formen un bosque. El búho es el que oye en la oscuridad y escribe lo que oyó.
 
 **Fuera de alcance por ahora**: hotkeys globales, inyección de texto en otras
-apps, historial de notas, importar archivos de audio, grabación de audio del
-sistema, resúmenes con LLM, traducción, i18n. Si algo de eso se propone, debe
+apps, historial de notas, varios archivos a la vez o audios de más de 20
+minutos, grabación de audio del sistema, resúmenes con LLM, traducción, i18n. Si algo de eso se propone, debe
 justificarse contra "súper pequeña, súper minimalista".
 
 ## Por qué se compila desde fuente
@@ -63,6 +64,7 @@ src/main/ajustes.js    preferencias: defectos, validación y guardado atómico
 src/preload/           puente contextBridge; única superficie visible del renderer
 src/renderer/          UI, captura de audio, worklet PCM y medidor de nivel
 src/renderer/microfono.js  resolución del dispositivo de entrada (lógica pura)
+src/renderer/archivo.js    archivo de audio → WAV: límites, decodificar, mono
 src/renderer/ajustes.html  ventana de ajustes, aparte de la tira principal
 scripts/               setup-whisper.js (compila el engine), icono.js (marca),
                        iconos.js (iconografía de la UI), pruebas y smokes
@@ -167,6 +169,21 @@ re-litigar sin motivo nuevo.**
   tres se pintan **en fila** en una sola página, no apiladas: el gestor de
   ventanas recorta la ventana al alto de la pantalla y la tercera salía cortada
   sin que nada avisara.
+- **Archivos de audio**: se decodifican en el **renderer** con
+  `decodeAudioData` sobre un `AudioContext` a 16 kHz, que ya devuelve el audio
+  remuestreado; se mezcla a mono y se pasa al mismo `codificarWav()` de la
+  grabación. El main no interviene —no tiene decodificador sin ffmpeg— y no
+  hay canal IPC nuevo. Límites: 20 minutos y 250 MB (lo que ocupa un WAV de 20
+  minutos a calidad CD). El tamaño se mira antes de leer y la duración por la
+  cabecera (`<audio preload="metadata">`) antes de decodificar, con respaldo a
+  `AudioBuffer.duration`. **Sin puerta de voz** para archivos: sus umbrales son
+  del micrófono con control de ganancia. Soltar un archivo exige
+  `preventDefault()` en `dragover` y `drop`, o Electron navega a él.
+- **`POST /inference` por `node:http`, no por `fetch`**: undici aborta si las
+  cabeceras tardan más de 300 s y `whisper-server` no responde hasta terminar,
+  así que un audio largo fallaría a mitad. Se usa `agent: false` porque el
+  agente global de Node trae un timeout de socket de 5 s. El multipart lo sigue
+  armando `FormData`, serializado con `new Request(...)`.
 - **Aceleración por hardware desactivada en Linux**: bajo WSLg la rasterización
   por GPU llena la consola de `Creation of StagingBuffer's SharedImage failed`.
 
@@ -201,6 +218,10 @@ Dos smokes con la app real, porque hay cosas que ninguna prueba unitaria ve:
 - `pnpm run prueba:ajustes` — lógica del fichero de preferencias, en Node sin
   Electron por medio.
 - `pnpm run prueba:microfono` — la resolución del dispositivo, en Node.
+- `pnpm run prueba:archivo` — límites y mezcla a mono del modo archivo, en Node.
+- `pnpm run smoke:archivo` — con el renderer real: soltar y elegir archivos,
+  formatos, límites, y que soltar no saque a la app de la ventana. Con
+  `-- --largo`, además un audio de ~19,5 minutos (tarda minutos).
 - `pnpm run prueba:texto` — el formato del transcrito, en Node.
 - `pnpm run smoke:ajustes` — con el proceso main real: que el engranaje abre
   una sola ventana, que el ajuste llega al disco y que el cambio de tema

@@ -20,12 +20,15 @@ const btn = {
   copiar: el('copy'),
   reprocesar: el('reprocess'),
   limpiar: el('clear'),
+  abrir: el('open'),
 };
+const entradaArchivo = el('file');
 
 // Las fases 'abriendo' y 'cerrando' cubren los tramos asíncronos de abrir y
 // cerrar el micrófono: sin ellas, un doble clic entra dos veces en el mismo
 // manejador y deja un AudioContext huérfano o pisa una transcripción en curso.
-// inicial | abriendo | grabando | pausado | cerrando | transcribiendo
+// 'leyendo' es lo mismo para un archivo mientras se valida y decodifica.
+// inicial | abriendo | grabando | pausado | cerrando | leyendo | transcribiendo
 let fase = 'inicial';
 let engineListo = false;
 let ultimoWav = null; // se conserva para poder reprocesar
@@ -46,9 +49,10 @@ function icono(boton, id) {
 function pintar() {
   const grabando = fase === 'grabando';
   const activo = grabando || fase === 'pausado';
-  const ocupado = fase === 'transcribiendo' || fase === 'abriendo' || fase === 'cerrando';
+  const ocupado = ['transcribiendo', 'abriendo', 'cerrando', 'leyendo'].includes(fase);
 
   btn.grabar.disabled = !engineListo || activo || ocupado;
+  btn.abrir.disabled = !engineListo || activo || ocupado;
   btn.pausar.disabled = !activo;
   btn.detener.disabled = !activo;
   btn.copiar.disabled = !salida.value || ocupado;
@@ -62,8 +66,9 @@ function pintar() {
   btn.pausar.title = btn.pausar.ariaLabel = fase === 'pausado' ? 'Reanudar' : 'Pausar';
 
   // Sólo el texto —o la espera de la transcripción, que enseña su aviso— abre el
-  // panel. 'abriendo' y 'cerrando' también son fases ocupadas, pero no tienen
-  // nada que enseñar: incluirlas hacía parpadear la ventana al pulsar grabar.
+  // panel. 'abriendo', 'cerrando' y 'leyendo' también son fases ocupadas, pero
+  // no tienen nada que enseñar: incluirlas hacía parpadear la ventana al pulsar
+  // grabar, o al soltar un archivo que se rechaza al momento.
   desplegar(Boolean(salida.value) || fase === 'transcribiendo');
 }
 
@@ -172,6 +177,56 @@ btn.detener.addEventListener('click', async () => {
   }
   ultimoWav = captura.wav;
   await transcribir(ultimoWav);
+});
+
+/** Un archivo entra por el mismo camino que una grabación, desde el WAV. */
+async function transcribirArchivo(file) {
+  if (fase !== 'inicial' || !engineListo || !file) return;
+  fase = 'leyendo';
+  pintar();
+
+  let res;
+  try {
+    res = await leerArchivo(file);
+  } catch (err) {
+    res = { aviso: `no se pudo leer el archivo: ${err.message}` };
+  }
+
+  // Sin puerta de voz: está calibrada para el micrófono con control de
+  // ganancia, y una nota de voz grabada bajita quedaría rechazada sin motivo.
+  if (!res.aviso && res.ms < MIN_MS) res = { aviso: 'demasiado corto' };
+  if (res.aviso) {
+    fase = 'inicial';
+    salida.value = `⚠ ${res.aviso}`;
+    pintar();
+    return;
+  }
+
+  timer.textContent = reloj(res.ms);
+  ultimoWav = res.wav;
+  await transcribir(ultimoWav);
+}
+
+btn.abrir.addEventListener('click', () => {
+  if (fase === 'inicial') entradaArchivo.click();
+});
+
+entradaArchivo.addEventListener('change', () => {
+  const file = entradaArchivo.files[0];
+  // Se vacía para que volver a elegir el mismo archivo dispare otro 'change'.
+  entradaArchivo.value = '';
+  transcribirArchivo(file);
+});
+
+// Sin preventDefault en los dos eventos, Electron navega al archivo soltado y
+// la app desaparece de la ventana. Se previene siempre, aunque no se acepte.
+document.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = fase === 'inicial' && engineListo ? 'copy' : 'none';
+});
+document.addEventListener('drop', (e) => {
+  e.preventDefault();
+  transcribirArchivo(e.dataTransfer.files[0]);
 });
 
 btn.copiar.addEventListener('click', async () => {

@@ -344,7 +344,7 @@ textarea::-webkit-scrollbar-thumb:hover {
   background: transparent;
   color: var(--tenue);
 }
-.key--sec:hover {
+.key--sec:hover:not(:disabled) {
   background: var(--tecla);
   color: var(--texto);
 }

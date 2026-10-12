@@ -37,6 +37,7 @@ const ICONOS = [
   { id: 'i-again', lucide: 'rotate-ccw' },
   { id: 'i-clear', lucide: 'trash-2' },
   { id: 'i-gear', lucide: 'settings-2' },
+  { id: 'i-file', lucide: 'file-audio' },
   { id: 'i-reload', lucide: 'refresh-cw' },
   { id: 'i-min', lucide: 'minus' },
   { id: 'i-close', lucide: 'x' },

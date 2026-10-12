@@ -11,8 +11,10 @@ context: |
   porqué de cada decisión de audio y sus calibraciones.
 
   Fuera de alcance: hotkeys globales, inyección de texto en otras apps,
-  historial de notas, importar audio, capturar audio del sistema, resúmenes
-  con LLM, traducción, i18n. El norte es "súper pequeña, súper minimalista".
+  historial de notas, capturar audio del sistema, resúmenes con LLM,
+  traducción, i18n. El norte es "súper pequeña, súper minimalista". Transcribir
+  un archivo de audio sí entra (change add-audios): un solo archivo, hasta 20
+  minutos, por el mismo ciclo que una grabación.
 
   Stack: Electron (main/preload/renderer) con HTML+CSS+JS plano, sin
   framework, sin bundler, sin TypeScript; `contextIsolation: true` y el
@@ -46,9 +48,9 @@ rules:
     - Toda API nueva expuesta al renderer se lista explícitamente, con su forma.
     - Señalar si introduce una dependencia en runtime y por qué no se puede
       evitar.
-    - Un ajuste que sólo cambie parámetros aceptados por petición en
+    - "Un ajuste que sólo cambie parámetros aceptados por petición en
       `POST /inference` debe decirlo: no requiere reiniciar el motor, y
-      proponer un reinicio sería un coste inventado.
+      proponer un reinicio sería un coste inventado."
   tasks:
     - Trocear en tareas de máximo 2 horas.
     - La última tarea de cada cambio es verificarlo con la app corriendo
@@ -63,8 +65,8 @@ operations:
     guidance:
       - Verificar sintaxis con `node --check` en los archivos JS tocados.
       - No versionar nada bajo `vendor/`.
-      - Al tocar audio, probar el ciclo completo con voz real: el silencio y
-        los clips de menos de un segundo son los que rompen.
+      - "Al tocar audio, probar el ciclo completo con voz real: el silencio y
+        los clips de menos de un segundo son los que rompen."
       - Si se tocan los umbrales de la puerta de voz, repetir el barrido contra
         habla real; no moverlos a ojo.
   archive:

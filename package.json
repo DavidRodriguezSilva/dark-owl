@@ -15,6 +15,7 @@
     "setup": "node scripts/setup-whisper.js",
     "setup:cuda": "node scripts/setup-whisper.js --cuda",
     "prueba:ajustes": "node scripts/prueba-ajustes.js",
+    "prueba:archivo": "node scripts/prueba-archivo.js",
     "prueba:microfono": "node scripts/prueba-microfono.js",
     "prueba:texto": "node scripts/prueba-texto.js",
     "icono": "electron scripts/icono.js",
@@ -23,7 +24,8 @@
     "dist": "electron-builder",
     "smoke": "electron scripts/smoke.js",
     "smoke:motor": "electron scripts/smoke-motor.js",
-    "smoke:ajustes": "electron scripts/smoke-ajustes.js"
+    "smoke:ajustes": "electron scripts/smoke-ajustes.js",
+    "smoke:archivo": "electron scripts/smoke-archivo.js"
   },
   "devDependencies": {
     "electron": "^42.4.0",

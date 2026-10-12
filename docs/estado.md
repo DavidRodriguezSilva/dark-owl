@@ -43,6 +43,23 @@ Y el camino completo renderer → preload → IPC → motor → limpieza, con
 en una sola línea: «And so my fellow Americans, ask not what your country can do
 for you, ask what you can do for your country.» (5,6 s).
 
+## Modo archivo
+
+Un archivo de audio —con el mando de la tira o soltándolo encima— entra por el
+mismo ciclo que una grabación: se decodifica en el renderer a 16 kHz mono y va
+al motor como cualquier WAV. Límites de 20 minutos y 250 MB, comprobados antes
+de leer y de decodificar. `pnpm run smoke:archivo` lo recorre con el renderer
+real.
+
+Medido con `pnpm run smoke:archivo -- --largo` (19:26 de voz, `small`, CPU):
+**364 s** hasta el texto, 11.553 caracteres. Pasa de los 300 s en que el
+`fetch` de Node habría abortado la petición; por eso `/inference` va por
+`node:http`.
+
+Formatos verificados aquí: mp3, wav, webm/opus y mp4/opus. Falta comprobar
+con archivos reales ogg/opus (WhatsApp) y m4a con AAC: en este entorno no hay
+con qué generarlos.
+
 ## Pendiente
 
 - **Ejecutable de Windows**: hay que construirlo en Windows con MSVC; los pasos
@@ -51,6 +68,7 @@ for you, ask what you can do for your country.» (5,6 s).
 - El idioma está fijado en `auto` (`LANGUAGE` en `src/main/engine.js`). Si sólo
   se dicta en español, ponerlo en `'es'` es más rápido y más fiable en clips
   cortos.
+
 - Bajo Linux se desactiva la aceleración por hardware: con ella, WSLg no
   consigue crear los buffers de rasterización y llena la consola de
   «Creation of StagingBuffer's SharedImage failed». Esta UI son cuatro cajas y
