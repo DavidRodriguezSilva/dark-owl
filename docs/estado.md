@@ -60,14 +60,13 @@ Formatos verificados aquí: mp3, wav, webm/opus y mp4/opus. Falta comprobar
 con archivos reales ogg/opus (WhatsApp) y m4a con AAC: en este entorno no hay
 con qué generarlos.
 
-## Pendiente
+## Windows
 
-- **Ejecutable de Windows**: hay que construirlo en Windows con MSVC; los pasos
-  están en `docs/windows.md`. Desde WSL no sale: `vendor/` contiene binarios
-  ELF, así que el paquete arrancaría y fallaría al transcribir.
-- El idioma está fijado en `auto` (`LANGUAGE` en `src/main/engine.js`). Si sólo
-  se dicta en español, ponerlo en `'es'` es más rápido y más fiable en clips
-  cortos.
+El ejecutable se construye en Windows con MSVC (pasos en `docs/windows.md`) y
+ya está hecho y probado. Desde WSL no sale: `vendor/` contiene binarios ELF,
+así que un paquete armado aquí arrancaría y fallaría al transcribir.
+
+## Pendiente
 
 - Bajo Linux se desactiva la aceleración por hardware: con ella, WSLg no
   consigue crear los buffers de rasterización y llena la consola de

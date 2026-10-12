@@ -56,7 +56,7 @@ el CMake que trae Visual Studio.
 pnpm install
 pnpm run setup      # clona y compila whisper.cpp con MSVC, baja ggml-small.bin
 pnpm start          # comprobar que funciona ANTES de empaquetar
-pnpm run dist       # → release\Dark Owl-Setup-0.1.0.exe
+pnpm run dist       # → release\Dark Owl-Setup-1.0.0.exe
 ```
 
 Con GPU NVIDIA, y sólo si tienes el CUDA Toolkit instalado:

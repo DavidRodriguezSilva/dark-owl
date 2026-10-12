@@ -1,7 +1,7 @@
 {
   "name": "dark-owl",
   "productName": "Dark Owl",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "description": "Grabadora minimalista de voz a texto, 100% offline, sobre whisper.cpp. Grabar, pausar, detener, transcribir, limpiar, reprocesar.",
   "main": "src/main/main.js",
